@@ -192,9 +192,9 @@ export async function generateFlashcards(
       type: cardType,
       difficulty: Math.min(5, Math.max(1, rc.difficulty || 3)),
       level: classLevel,
-      // Default to minimalist styling initially, specific templates will be handled by the wrapper
-      templateKey: 'minimal_dark',
-      colorPalette: 'slate_mono',
+      // Default to semantic styling now that CardTemplateKey matches CardType
+      templateKey: cardType as CardTemplateKey,
+      colorPalette: (TYPE_TO_PALETTE[cardType] || 'slate_mono') as ColorPalette,
       sourceContext: rc.sourceContext || '',
       insight: rc.insight || '',
       mistake: rc.mistake || '',
