@@ -322,10 +322,18 @@ export default function PracticePage() {
         </AnimatePresence>
 
         {/* Card — Modern Wrapper with Level-Aware Templates */}
-        <div className="relative">
+        <div 
+          className="relative cursor-pointer select-none h-[450px] w-full"
+          onClick={() => {
+            console.log('Card clicked, current state:', { isFlipped, isThinkTime });
+            if (!isFlipped && !isThinkTime) handleFlip();
+            else if (isThinkTime) { setIsThinkTime(false); setIsFlipped(true); }
+            else setIsFlipped(false);
+          }}
+        >
           <AnimatePresence mode="wait">
             <FlashcardWrapper 
-              key={currentCard.id}
+              key={`${currentCard.id}-${isFlipped}`}
               card={currentCard}
               side={isFlipped ? 'back' : 'front'}
               selectedOption={selectedOption}

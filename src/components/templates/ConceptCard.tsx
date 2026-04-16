@@ -38,7 +38,7 @@ export default function ConceptCard({ card, level, side }: Props) {
   }[level];
 
   return (
-    <div className={`w-full h-full relative p-10 backface-hidden ${styles.bg} backdrop-blur-3xl border ${styles.border} ${styles.radius} overflow-hidden shadow-2xl`}>
+    <div className={`w-full h-full relative p-10 ${styles.bg} backdrop-blur-3xl border ${styles.border} ${styles.radius} overflow-hidden shadow-2xl`}>
       <div className="absolute top-0 right-0 p-8 opacity-10">
         <BrainCircuit className="w-20 h-20" />
       </div>
