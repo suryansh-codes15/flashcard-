@@ -68,21 +68,35 @@ interface RawCard {
 
 // Fallback template mapping if AI doesn't return one
 const TYPE_TO_TEMPLATE: Record<string, CardTemplateKey> = {
-  concept: 'concept_glow',
-  definition: 'quote_hero',
-  relationship: 'comparison_split',
-  edge_case: 'warning_edge',
-  application: 'checklist',
-  example: 'scenario_story',
+  concept: 'concept',
+  example: 'example',
+  mcq: 'mcq',
+  insight: 'insight',
+  problem: 'problem',
+  summary: 'summary',
+  visual: 'visual',
+  fun: 'fun',
+  // Legacy/Synonym fallbacks
+  definition: 'concept',
+  relationship: 'insight',
+  edge_case: 'insight',
+  application: 'example',
 };
 
 const TYPE_TO_PALETTE: Record<string, ColorPalette> = {
   concept: 'indigo_violet',
+  example: 'emerald_teal',
+  mcq: 'cyan_blue',
+  insight: 'indigo_violet',
+  problem: 'cyan_blue',
+  summary: 'emerald_teal',
+  visual: 'indigo_violet',
+  fun: 'amber_orange',
+  // Legacy/Synonym fallbacks
   definition: 'indigo_violet',
   relationship: 'cyan_blue',
   edge_case: 'rose_crimson',
   application: 'emerald_teal',
-  example: 'amber_orange',
 };
 
 async function generateCardsForChunk(content: string, templateId: string, classLevel: ClassLevel): Promise<RawCard[]> {
