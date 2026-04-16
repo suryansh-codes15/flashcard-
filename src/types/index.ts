@@ -12,7 +12,8 @@ export type CardType =
   | 'application'
   | 'example'
   | 'relationship'
-  | 'edge_case';
+  | 'edge_case'
+  | 'mcq';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
@@ -29,7 +30,8 @@ export type CardTemplateKey =
   | 'data_table'        // Grid cells — stats, comparisons
   | 'mind_map'          // Branching — interconnected ideas
   | 'exam_highlight'    // Yellow marker — high-yield exam facts
-  | 'minimal_dark';     // Ultra-clean black — all-purpose fallback
+  | 'minimal_dark'      // Ultra-clean black — all-purpose fallback
+  | 'mcq_card';         // Modern interactive MCQ layout
 
 export type ColorPalette =
   | 'indigo_violet'   // Deep focus — concept, definition
@@ -53,6 +55,9 @@ export interface Flashcard {
   insight?: string;    // Deep-dive insight from AI
   mistake?: string;    // Common mistake/gotcha
   example?: string;    // Real-world application example
+  // MCQ specific
+  options?: string[];
+  correctAnswer?: string;
   createdAt: string;
   // SRS Fields
   interval: number;
@@ -87,11 +92,16 @@ export interface SRSRating {
 }
 
 export interface StudySession {
+  id: string;
   deckId: string;
   startedAt: string;
+  finishedAt?: string;
   cardsStudied: number;
-  cardsCorrect: number;
+  cardsCorrect: number; // For MCQs or 'easy' ratings
   cardsHard: number;
+  accuracy: number;
+  weakTopics: string[];
+  aiNote?: string;      // AI-generated feedback summary
 }
 
 export interface GenerationProgress {
@@ -104,3 +114,5 @@ export interface GenerationProgress {
   flashcards?: Flashcard[];
   error?: string;
 }
+
+export type TutorAction = 'simpler' | 'example' | 'importance' | 'harder' | 'misunderstanding';

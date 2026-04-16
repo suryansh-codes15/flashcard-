@@ -103,22 +103,15 @@
 
   /* ── Premium Brand Button ── */
   .btn-brand {
-    @apply inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all duration-300 relative overflow-hidden;
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    box-shadow: 0 10px 30px -5px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+    @apply inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-white transition-all duration-500 relative overflow-hidden;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+    background-size: 200% auto;
+    box-shadow: 0 20px 40px -10px rgba(79,70,229,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
   }
-  .btn-brand::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transform: translateX(-100%);
-    transition: 0.5s;
-  }
-  .btn-brand:hover::before { transform: translateX(100%); }
   .btn-brand:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 15px 40px -5px rgba(99,102,241,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+    background-position: right center;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 30px 60px -12px rgba(79,70,229,0.6), inset 0 1px 0 rgba(255,255,255,0.4);
   }
   .btn-brand:active { transform: translateY(-1px) scale(0.98); }
 
@@ -247,6 +240,30 @@
   }
   .float-medium {
     animation: float-medium 12s ease-in-out infinite;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Custom Scrollbar for clean UI */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(99,102,241,0.2);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(99,102,241,0.4);
   }
 }
 

@@ -137,7 +137,15 @@ export const useFlashcardStore = create<FlashcardStore>()(
                 }));
             },
 
-            addSession: (session) => set((state) => ({ sessions: [...state.sessions, session] })),
+            addSession: (session) => set((state) => {
+                const totalCorrect = session.cardsCorrect;
+                const totalStudied = session.cardsStudied;
+                const accuracy = totalStudied > 0 ? Math.round((totalCorrect / totalStudied) * 100) : 0;
+                
+                return { 
+                    sessions: [...state.sessions, { ...session, accuracy }] 
+                };
+            }),
 
             getDueCount: (deckId) => {
                 const { flashcards } = get();

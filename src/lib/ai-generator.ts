@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import type { PDFChunk, Flashcard, CardType, CardTemplateKey, ColorPalette } from '@/types';
+import type { PDFChunk, Flashcard, CardType, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -30,37 +30,39 @@ COLOR PALETTE RULES (choose colorPalette from this list only):
 `;
 
 const SYSTEM_INSTRUCTION = `You are "The Elite Teacher" — a master of learning science and cognitive psychology. 
-Your goal is to transform raw text into a deep learning system. 
+Your goal is to transform raw text into a deep learning system that challenges and inspires.
 
 Flashcard Principles:
-1. DESIRABLE DIFFICULTY: Never ask obvious questions. Force the brain to work.
-2. WHY & HOW: Prioritize understanding the mechanics and reasoning over rote memorization.
-3. CONTEXTUAL Insight: Every card back should provide a "Deep Insight" that connects the fact to a larger mental model.
-4. MISTAKE AVOIDANCE: Explicitly call out a "Common Mistake" or "Gotcha" related to the concept.
+1. DESIRABLE DIFFICULTY: Never ask obvious questions. Force the brain to work. Prioritize conceptual "WHY" and "HOW" over "WHAT".
+2. SMART MCQS: For complex topics, generate MCQs. Include 4 plausible options and a clear correct answer.
+3. DECOR CORE: Every card MUST have an "Insight" (big picture), a "Mistake" (common pitfall), and an "Example" (real-world application).
+4. MCQ EXPLANATION: For MCQs, the "back" must explain WHY the correct answer is right AND why the most common "Trap" option is wrong.
 
 Required JSON Structure per card:
 {
-  "front": "A challenging WHY/HOW question",
-  "back": "A concise, high-impact answer",
-  "type": "concept | example | edge_case",
+  "type": "concept | mcq",
   "difficulty": 1-5,
+  "front": "A challenging question",
+  "back": "Detailed answer (Flashcard) OR Explanation of correct/wrong options (MCQ)",
+  "options": ["Option A", "Option B", "Option C", "Option D"], // Only for type: mcq
+  "correctAnswer": "The exact text of the correct option", // Only for type: mcq
   "templateKey": "must choose from list",
   "colorPalette": "must choose from list",
-  "insight": "A 'Why it matters' or 'Big picture' insight",
-  "mistake": "A common point of confusion or specific error to avoid",
-  "example": "A concrete real-world application or scenario"
+  "insight": "Big picture connection",
+  "mistake": "Common trap or misconception",
+  "example": "Real-world scenario"
 }
 
 ${TEMPLATE_RULES}`;
 
 const TEMPLATES: Record<string, string> = {
-  concept: `Create 4 to 6 deep learning cards. Focus on the core mechanics and "how it works". 
-Ensure every card has: insight, mistake, and example.`,
+  concept: `Create 4 to 6 deep learning cards. Mix classic conceptual questions with 1-2 MCQ type cards (25% ratio). 
+Focus on the core mechanics and "how it works".`,
   
-  exam: `Create 5 to 7 high-yield cards. Focus on topics that are most likely to appear in advanced assessments.
-In 'insight', mention how this is typically tested.`,
+  exam: `Create 6 to 8 high-yield cards. Include 2-3 complex MCQs (30% ratio). 
+Focus on critical exam points and common traps.`,
 
-  problem: `Create 3 to 5 scenario-based cards. The 'front' should be a problem, and 'back' should be the solution logic.
+  problem: `Create 3 to 5 scenario-based cards. At least one should be an MCQ where the user chooses the best solution.
 The 'example' should be another variant of this problem type.`,
 };
 
@@ -75,6 +77,8 @@ interface RawCard {
   insight?: string;
   mistake?: string;
   example?: string;
+  options?: string[];
+  correctAnswer?: string;
 }
 
 // Fallback template mapping if AI doesn't return one
@@ -194,6 +198,8 @@ export async function generateFlashcards(
       insight: rc.insight || '',
       mistake: rc.mistake || '',
       example: rc.example || '',
+      options: rc.options,
+      correctAnswer: rc.correctAnswer,
       tags: [],
       createdAt: now,
       interval: 1,
@@ -207,7 +213,6 @@ export async function generateFlashcards(
   return flashcards;
 }
 
-export type TutorAction = 'simpler' | 'example' | 'importance';
 
 export async function aiTutor(
   action: TutorAction,
@@ -225,7 +230,14 @@ Original Answer: ${back}
 Context: ${context}`,
     importance: `Why is this concept actually important to know? How does it connect to the real world or other ideas?
 Concept: ${front}
-Answer: ${back}`
+Answer: ${back}`,
+    harder: `I understand this concept well. Generate a much more challenging, multi-step conceptual question that tests the limits of my knowledge on this specific topic.
+Concept: ${front}
+Context: ${context}`,
+    misunderstanding: `I rated this card as 'Again' (Hard). Analyze the relationship between the question and the correct answer. Explain WHY a student might have misunderstood this or what fundamental conceptual trap they likely fell into.
+Question: ${front}
+Correct Answer: ${back}
+Context: ${context}`
   };
 
   try {
@@ -261,5 +273,32 @@ export async function regenerateCard(
     return { front: parsed.front || front, back: parsed.back || back };
   } catch {
     return { front, back };
+  }
+}
+
+export async function generateSummary(
+  stats: { easy: number; medium: number; hard: number; correctMCQ: number },
+  deckName: string
+): Promise<string> {
+  const prompt = `Act as an Elite Teacher. Analyze the following session results for the deck "${deckName}" and provide a short, motivating, and highly insightful "Teacher's Note" (max 3 sentences).
+  
+  Results:
+  - Easy (Mastered): ${stats.easy}
+  - Medium (Familiar): ${stats.medium}
+  - Hard (Struggled): ${stats.hard}
+  - MCQ Accuracy: ${stats.correctMCQ} correct
+  
+  Give specific pedagogical advice based on these numbers. If they struggled, focus on concept-building. If they succeeded, focus on application.`;
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'system', content: 'You are an Elite Teacher providing personalized feedback.' }, { role: 'user', content: prompt }],
+      model: GROQ_MODEL,
+      temperature: 0.7,
+      max_tokens: 300,
+    });
+    return completion.choices[0]?.message?.content || 'Keep pushing! Mastery is a journey, not a destination.';
+  } catch {
+    return 'Great session today. Consistency is the key to deep learning.';
   }
 }

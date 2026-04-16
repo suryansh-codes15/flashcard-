@@ -15,18 +15,22 @@ const DataTable      = dynamic(() => import('./DataTable'));
 const MindMap        = dynamic(() => import('./MindMap'));
 const ExamHighlight  = dynamic(() => import('./ExamHighlight'));
 const MinimalDark    = dynamic(() => import('./MinimalDark'));
+const MCQCard        = dynamic(() => import('./MCQCard'));
 
 interface Props {
   card: Flashcard;
   side: 'front' | 'back';
+  selectedOption?: string | null;
+  onSelect?: (option: string) => void;
 }
 
-export default function TemplateRenderer({ card, side }: Props) {
-  const key: CardTemplateKey = card.templateKey || 'concept_glow';
+export default function TemplateRenderer({ card, side, selectedOption, onSelect }: Props) {
+  const key: CardTemplateKey = card.templateKey || (card.type === 'mcq' ? 'mcq_card' : 'concept_glow');
 
-  const props = { card, side };
+  const props = { card, side, selectedOption, onSelect };
 
   switch (key) {
+    case 'mcq_card':          return <MCQCard        {...props} />;
     case 'concept_glow':      return <ConceptGlow    {...props} />;
     case 'comparison_split':  return <ComparisonSplit {...props} />;
     case 'timeline_steps':    return <TimelineSteps  {...props} />;

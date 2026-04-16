@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import TemplateRenderer from '@/components/templates/TemplateRenderer';
-import type { Flashcard, DifficultyLevel, ColorPalette } from '@/types';
+import SessionSummary from '@/components/practice/SessionSummary';
+import type { Flashcard, DifficultyLevel, ColorPalette, TutorAction } from '@/types';
 
 // Ambient background configs per palette
 const PALETTE_BACKGROUNDS: Record<ColorPalette, { bg: string; orb1: string; orb2: string; accent: string }> = {
@@ -98,8 +99,10 @@ export default function PracticePage() {
   const [tutorLoading, setTutorLoading] = useState(false);
   const [tutorContent, setTutorContent] = useState<{ action: string, text: string } | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'warning' | 'error', text: string } | null>(null);
-  const [sessionStats, setSessionStats] = useState({ easy: 0, medium: 0, hard: 0 });
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [sessionStats, setSessionStats] = useState({ easy: 0, medium: 0, hard: 0, correctMCQ: 0 });
   const [sessionDone, setSessionDone] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
 
   const currentCard = cards[idx];
   const progress = cards.length > 0 ? (idx / cards.length) * 100 : 0;
@@ -111,11 +114,16 @@ export default function PracticePage() {
     rateCard(currentCard.id, rating);
     setSessionStats((prev) => ({ ...prev, [rating]: prev[rating] + 1 }));
     
-    // Feedback animation
+    // Auto-trigger misunderstanding analysis for 'hard' (Again)
+    if (rating === 'hard') {
+      handleTutorAction('misunderstanding');
+    }
+
+    // Emotional Feedback System
     const feedbackMap = {
-      easy: { type: 'success', text: 'Mastered! 🚀' },
-      medium: { type: 'warning', text: 'Getting there... 💪' },
-      hard: { type: 'error', text: 'Reviewing soon 🧠' }
+      easy: { type: 'success', text: 'Nice! You’re getting this 👍' },
+      medium: { type: 'warning', text: 'Good effort, keep going 💪' },
+      hard: { type: 'error', text: 'Let’s revisit this 🔁' }
     };
     // @ts-ignore
     setFeedback(feedbackMap[rating]);
@@ -124,16 +132,37 @@ export default function PracticePage() {
     setIsThinkTime(false);
     setShowSource(false);
     setTutorContent(null);
+    setSelectedOption(null);
 
     setTimeout(() => {
       setFeedback(null);
       if (idx + 1 >= cards.length) {
         setSessionDone(true);
+        generateSessionSummary();
       } else {
         setIdx((i) => i + 1);
       }
-    }, 800);
+    }, 1000);
   }, [currentCard, idx, cards.length, rateCard]);
+
+  const handleSelectOption = (option: string) => {
+    if (selectedOption || !currentCard) return;
+    setSelectedOption(option);
+    const isCorrect = option === currentCard.correctAnswer;
+    
+    if (isCorrect) {
+      setSessionStats(prev => ({ ...prev, correctMCQ: prev.correctMCQ + 1 }));
+      setFeedback({ type: 'success', text: 'Spot on! Correct! ✅' });
+    } else {
+      setFeedback({ type: 'error', text: 'Not quite. See why below. ⚠️' });
+    }
+
+    // Auto flip to reveal explanation after a short delay
+    setTimeout(() => {
+      setFeedback(null);
+      setIsFlipped(true);
+    }, 1200);
+  };
 
   const handleFlip = () => {
     if (isFlipped) {
@@ -152,7 +181,22 @@ export default function PracticePage() {
     return () => clearTimeout(timer);
   };
 
-  const handleTutorAction = async (action: 'simpler' | 'example' | 'importance') => {
+  const generateSessionSummary = async () => {
+    if (!deck) return;
+    try {
+      const res = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stats: sessionStats, deckName: deck.name }),
+      });
+      const data = await res.json();
+      setAiNote(data.aiNote);
+    } catch {
+      setAiNote('You have a solid foundation. Focus on the core relationships between these concepts in your next session.');
+    }
+  };
+
+  const handleTutorAction = async (action: TutorAction) => {
     if (!currentCard || tutorLoading) return;
     setTutorLoading(true);
     try {
@@ -203,40 +247,26 @@ export default function PracticePage() {
   }
 
   if (cards.length === 0 || sessionDone) {
-    const total = sessionStats.easy + sessionStats.medium + sessionStats.hard;
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4" style={{ background: '#09090b' }}>
         <AnimatePresence>
           <AmbientBackground palette="indigo_violet" />
         </AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 rounded-3xl p-10 text-center max-w-md w-full"
-          style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div className="text-6xl mb-4">{total > 0 ? '🎉' : '✨'}</div>
-          <h2 className="text-2xl font-bold mb-2 text-white">{total > 0 ? 'Session Complete!' : 'All caught up!'}</h2>
-          <p className="mb-6 text-white/50">{total > 0 ? `You reviewed ${total} cards.` : 'No cards are due for review.'}</p>
-          {total > 0 && (
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              {[
-                { label: 'Hard', val: sessionStats.hard, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
-                { label: 'Medium', val: sessionStats.medium, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-                { label: 'Easy', val: sessionStats.easy, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-              ].map(({ label, val, color, bg }) => (
-                <div key={label} className="p-3 rounded-2xl" style={{ background: bg }}>
-                  <div className="text-2xl font-bold" style={{ color }}>{val}</div>
-                  <div className="text-xs text-white/40 mt-1">{label}</div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-col gap-3">
-            <button onClick={() => { setIdx(0); setSessionDone(false); setSessionStats({ easy: 0, medium: 0, hard: 0 }); setInitialized(false); }} className="btn-brand">
-              <RotateCcw className="w-4 h-4" /> Study Again
-            </button>
-            <button onClick={() => router.push('/dashboard')} className="btn-secondary">Back to Dashboard</button>
-          </div>
-        </motion.div>
+        
+        <SessionSummary 
+          stats={sessionStats}
+          totalCards={cards.length || sessionStats.easy + sessionStats.medium + sessionStats.hard}
+          deckName={deck.name}
+          aiNote={aiNote}
+          onReset={() => {
+            setIdx(0); 
+            setSessionDone(false); 
+            setSessionStats({ easy: 0, medium: 0, hard: 0, correctMCQ: 0 }); 
+            setInitialized(false); 
+            setSelectedOption(null);
+            setAiNote(null);
+          }}
+        />
       </div>
     );
   }
@@ -310,11 +340,16 @@ export default function PracticePage() {
                 }}>
                 {/* Front */}
                 <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-                  <TemplateRenderer card={currentCard} side="front" />
+                  <TemplateRenderer 
+                    card={currentCard} 
+                    side="front" 
+                    selectedOption={selectedOption}
+                    onSelect={handleSelectOption}
+                  />
                   
                   {/* Thinking Overlay */}
                   <AnimatePresence>
-                    {isThinkTime && (
+                    {isThinkTime && currentCard.type !== 'mcq' && (
                       <motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-xl bg-black/40"
@@ -325,16 +360,20 @@ export default function PracticePage() {
                           className="flex flex-col items-center gap-4"
                         >
                           <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
-                          <span className="text-sm font-bold tracking-widest uppercase text-white">Think...</span>
+                          <span className="text-sm font-bold tracking-widest uppercase text-white">Capture the answer in your mind...</span>
                         </motion.div>
-                        <span className="absolute bottom-10 text-xs text-white/40">Tap again to reveal now</span>
+                        <span className="absolute bottom-10 text-xs text-white/40 italic">Take a moment to truly think before revealing</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
                 {/* Back */}
                 <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                  <TemplateRenderer card={currentCard} side="back" />
+                  <TemplateRenderer 
+                    card={currentCard} 
+                    side="back" 
+                    selectedOption={selectedOption}
+                  />
                 </div>
               </div>
             </motion.div>
@@ -421,12 +460,12 @@ export default function PracticePage() {
               Another Example
             </button>
             <button 
-              onClick={() => handleTutorAction('importance')} 
+              onClick={() => handleTutorAction('harder')} 
               disabled={tutorLoading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-white/5 border border-white/10 hover:bg-white/10"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 group"
             >
-              <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-              Why It Matters
+              <TrendingUp className="w-3.5 h-3.5 group-hover:translate-y-[-1px] transition-transform" />
+              Level Up
             </button>
             {currentCard.sourceContext && (
               <button onClick={() => setShowSource(v => !v)}
@@ -455,12 +494,14 @@ export default function PracticePage() {
                   </div>
                   <span className="text-xs font-black uppercase tracking-widest text-indigo-400">
                     {tutorContent.action === 'simpler' ? 'Simpler Explanation' : 
-                     tutorContent.action === 'example' ? 'Practical Example' : 'Core Importance'}
+                     tutorContent.action === 'example' ? 'Practical Example' : 
+                     tutorContent.action === 'harder' ? 'Mastery Challenge' : 
+                     tutorContent.action === 'misunderstanding' ? 'AI Misconception Analysis' : 'Core Importance'}
                   </span>
                 </div>
                 <button onClick={() => setTutorContent(null)}><X className="w-4 h-4 text-white/20 hover:text-white" /></button>
               </div>
-              <p className="text-sm leading-relaxed text-white/80">{tutorContent.text}</p>
+              <p className="text-sm leading-relaxed text-white/80 whitespace-pre-wrap">{tutorContent.text}</p>
             </motion.div>
           )}
         </AnimatePresence>

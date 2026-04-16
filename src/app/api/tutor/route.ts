@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { aiTutor, TutorAction } from '@/lib/ai-generator';
+import { aiTutor } from '@/lib/ai-generator';
+import type { TutorAction } from '@/types';
 
 export async function POST(req: Request) {
   try {
