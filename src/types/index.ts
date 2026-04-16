@@ -20,21 +20,16 @@ export type ClassLevel = 'junior' | 'mid' | 'senior';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
-// 12 premium visual templates the AI assigns per card
+// Premium visual templates are now driven by the semantic 'type' field
 export type CardTemplateKey =
-  | 'concept_glow'      // Indigo aurora — definitions, concepts
-  | 'comparison_split'  // Two-panel glass — A vs B, relationships
-  | 'timeline_steps'    // Numbered steps — processes, sequences
-  | 'formula_dark'      // VSCode-dark mono — math, code, formulas
-  | 'quote_hero'        // Giant serif text — key terms, vocabulary
-  | 'scenario_story'    // Narrative card — case studies, examples
-  | 'warning_edge'      // Red caution — edge cases, exceptions
-  | 'checklist'         // Animated checks — applications, criteria
-  | 'data_table'        // Grid cells — stats, comparisons
-  | 'mind_map'          // Branching — interconnected ideas
-  | 'exam_highlight'    // Yellow marker — high-yield exam facts
-  | 'minimal_dark'      // Ultra-clean black — all-purpose fallback
-  | 'mcq_card';         // Modern interactive MCQ layout
+  | 'concept'
+  | 'example'
+  | 'mcq'
+  | 'insight'
+  | 'problem'
+  | 'summary'
+  | 'visual'
+  | 'fun';
 
 export type ColorPalette =
   | 'indigo_violet'   // Deep focus — concept, definition
@@ -52,7 +47,7 @@ export interface Flashcard {
   type: CardType;
   difficulty: number;       // 1-5 from AI assessment
   level: ClassLevel;        // Injected for contextual styling
-  templateKey?: CardTemplateKey; // Becomes semantic in new system
+  templateKey?: CardTemplateKey;
   colorPalette?: ColorPalette;
   tags?: string[];
   sourceContext?: string;
