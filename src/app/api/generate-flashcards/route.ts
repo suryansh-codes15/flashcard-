@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { Flashcard, CardTemplateKey, ColorPalette } from '@/types';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const RequestSchema = z.object({
   deckId: z.string().min(1),
