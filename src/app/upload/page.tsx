@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import { generateId, getDeckEmoji } from '@/lib/utils';
-import type { GenerationProgress, Flashcard } from '@/types';
+import type { GenerationProgress, Flashcard, ClassLevel } from '@/types';
 
 const TEMPLATES = [
   {
@@ -53,6 +53,7 @@ export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [template, setTemplate] = useState<'concept' | 'exam' | 'problem'>('concept');
+  const [classLevel, setClassLevel] = useState<ClassLevel>('mid');
   const [stage, setStage] = useState<'idle' | 'uploading' | 'generating' | 'done' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState('');
@@ -110,6 +111,7 @@ export default function UploadPage() {
         cardCount: 0,
         masteredCount: 0,
         templateId: template,
+        classLevel: classLevel,
         emoji: getDeckEmoji(file.name),
         description: `Generated from ${file.name} with ${uploadData.chunks.length} sections`,
       };
@@ -123,7 +125,7 @@ export default function UploadPage() {
       const genRes = await fetch('/api/generate-flashcards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deckId, chunks: uploadData.chunks, fileName: file.name, templateId: template }),
+        body: JSON.stringify({ deckId, chunks: uploadData.chunks, fileName: file.name, templateId: template, classLevel }),
       });
 
       if (!genRes.ok) {
@@ -230,6 +232,34 @@ export default function UploadPage() {
                     </div>
                   </div>
                 </motion.button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Class Level Selection */}
+          <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: 'var(--text-muted)' }}>
+              Select Academic Level
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: 'junior' as const, label: 'Junior', sub: 'Class 3–5', emoji: '🎈', color: '#f472b6' },
+                { id: 'mid' as const, label: 'Mid', sub: 'Class 6–8', emoji: '🌱', color: '#60a5fa' },
+                { id: 'senior' as const, label: 'Senior', sub: 'Class 9–12', emoji: '🎓', color: '#818cf8' },
+              ].map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => setClassLevel(l.id)}
+                  className={`p-4 rounded-2xl text-left border transition-all ${
+                    classLevel === l.id 
+                      ? 'border-white/20 bg-white/5 shadow-lg' 
+                      : 'border-white/5 bg-transparent hover:bg-white/5 opacity-60'
+                  }`}
+                >
+                  <div className="text-xl mb-1">{l.emoji}</div>
+                  <div className="font-bold text-sm" style={{ color: classLevel === l.id ? l.color : 'white' }}>{l.label}</div>
+                  <div className="text-[10px] uppercase font-black tracking-widest opacity-40">{l.sub}</div>
+                </button>
               ))}
             </div>
           </motion.div>

@@ -4,50 +4,40 @@ import type { PDFChunk, Flashcard, CardType, CardTemplateKey, ColorPalette, Tuto
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
-// Template selection rules injected into every prompt
+// Template selection rules strictly following the new 8-type system
 const TEMPLATE_RULES = `
-TEMPLATE SELECTION RULES (choose templateKey from this list only):
-- "concept_glow"     → definitions, concepts, WHY/HOW explanations
-- "comparison_split" → A vs B, differences, relationships between two things
-- "timeline_steps"   → numbered sequences, processes, ordered steps
-- "formula_dark"     → math formulas, code snippets, algorithms, equations
-- "quote_hero"       → single key terms, vocabulary words, one-liner facts
-- "scenario_story"   → case studies, real-world examples, narrative scenarios
-- "warning_edge"     → exceptions, edge cases, common mistakes, gotchas
-- "checklist"        → lists of criteria, requirements, best practices
-- "data_table"       → statistics, data comparisons, structured data
-- "mind_map"         → concepts with multiple sub-connections
-- "exam_highlight"   → single highest-yield exam facts, must-know answers
-- "minimal_dark"     → general fallback for anything else
-
-COLOR PALETTE RULES (choose colorPalette from this list only):
-- "indigo_violet"  → concept, definition, theory
-- "emerald_teal"   → application, growth, process
-- "rose_crimson"   → edge_case, warning, danger
-- "amber_orange"   → example, scenario, energy
-- "cyan_blue"      → formula, code, data, technical
-- "slate_mono"     → minimal, fallback, neutral
+You MUST categorize every card into one of these 8 STRICT types:
+1. "concept" → Core definitions, theories, and "WHY/HOW" explanations.
+2. "example" → Concrete real-world applications or scenarios.
+3. "mcq"     → Multiple-choice questions (4 options, correct answer + trap explanation).
+4. "insight" → Deep-dive "Big Picture" connections or historical context.
+5. "problem" → Step-by-step worked examples or challenge problems.
+6. "summary" → High-level section reviews or conceptual maps.
+7. "visual"  → Highly descriptive descriptions of diagrams or visual relationships.
+8. "fun"     → (ONLY for Junior Level) Playful facts, mnemonics, or simple metaphors with emojis.
 `;
 
-const SYSTEM_INSTRUCTION = `You are "The Elite Teacher" — a master of learning science and cognitive psychology. 
-Your goal is to transform raw text into a deep learning system that challenges and inspires.
+const SYSTEM_INSTRUCTION = `You are "The Elite Teacher" — a master of pedagogical design. 
+Your goal is to transform raw text into a structured learning engine for students.
 
-Flashcard Principles:
-1. DESIRABLE DIFFICULTY: Never ask obvious questions. Force the brain to work. Prioritize conceptual "WHY" and "HOW" over "WHAT".
-2. SMART MCQS: For complex topics, generate MCQs. Include 4 plausible options and a clear correct answer.
-3. DECOR CORE: Every card MUST have an "Insight" (big picture), a "Mistake" (common pitfall), and an "Example" (real-world application).
-4. MCQ EXPLANATION: For MCQs, the "back" must explain WHY the correct answer is right AND why the most common "Trap" option is wrong.
+ADAPTIVE PERSONA:
+- JUNIOR (Class 3-5): Use simple words, lots of emojis, and a playful, encouraging tone. Focus on "fun" and "concept" cards.
+- MID (Class 6-8): Use clear, balanced language. Focus on logical connections, "example" and "problem" cards.
+- SENIOR (Class 9-12): Use sophisticated, technical language. Focus on "insight", "problem", and complex "mcq" cards. Prioritize depth and edge cases.
+
+FLASHCARD PRINCIPLES:
+1. DESIRABLE DIFFICULTY: Force retrieval. Prioritize conceptual "WHY" over mindless "WHAT".
+2. SMART MCQS: Include 4 plausible options. The "back" must explain WHY the correct answer is right and why the specific "Trap" option is wrong.
+3. DECOR CORE: Every card MUST have an "Insight", a "Mistake", and an "Example".
 
 Required JSON Structure per card:
 {
-  "type": "concept | mcq",
+  "type": "one of the 8 types",
   "difficulty": 1-5,
-  "front": "A challenging question",
-  "back": "Detailed answer (Flashcard) OR Explanation of correct/wrong options (MCQ)",
-  "options": ["Option A", "Option B", "Option C", "Option D"], // Only for type: mcq
-  "correctAnswer": "The exact text of the correct option", // Only for type: mcq
-  "templateKey": "must choose from list",
-  "colorPalette": "must choose from list",
+  "front": "The question or flashcard front content",
+  "back": "The answer or detailed explanation",
+  "options": ["Option A", "Option B", "Option C", "Option D"], // ONLY for type: mcq
+  "correctAnswer": "Exact text of correct option", // ONLY for type: mcq
   "insight": "Big picture connection",
   "mistake": "Common trap or misconception",
   "example": "Real-world scenario"
@@ -56,14 +46,9 @@ Required JSON Structure per card:
 ${TEMPLATE_RULES}`;
 
 const TEMPLATES: Record<string, string> = {
-  concept: `Create 4 to 6 deep learning cards. Mix classic conceptual questions with 1-2 MCQ type cards (25% ratio). 
-Focus on the core mechanics and "how it works".`,
-  
-  exam: `Create 6 to 8 high-yield cards. Include 2-3 complex MCQs (30% ratio). 
-Focus on critical exam points and common traps.`,
-
-  problem: `Create 3 to 5 scenario-based cards. At least one should be an MCQ where the user chooses the best solution.
-The 'example' should be another variant of this problem type.`,
+  concept: `Create cards that explain the mechanics and logic. Mix conceptual questions with MCQs (25% ratio).`,
+  exam: `Create high-yield cards. Include 30% complex MCQs focused on critical patterns.`,
+  problem: `Create scenario-based application cards. Focus on "how to apply" this logic.`,
 };
 
 interface RawCard {
@@ -100,13 +85,13 @@ const TYPE_TO_PALETTE: Record<string, ColorPalette> = {
   example: 'amber_orange',
 };
 
-async function generateCardsForChunk(content: string, templateId: string): Promise<RawCard[]> {
+async function generateCardsForChunk(content: string, templateId: string, classLevel: ClassLevel): Promise<RawCard[]> {
   const template = TEMPLATES[templateId] || TEMPLATES.concept;
   const prompt = `${template}\n\nCONTENT:\n${content}`;
 
   const completion = await groq.chat.completions.create({
     messages: [
-      { role: 'system', content: SYSTEM_INSTRUCTION },
+      { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\nTARGET CLASS LEVEL: ${classLevel.toUpperCase()}` },
       { role: 'user', content: prompt },
     ],
     model: GROQ_MODEL,
@@ -136,6 +121,7 @@ export async function generateFlashcards(
   chunks: PDFChunk[],
   fileName: string,
   templateId: 'concept' | 'exam' | 'problem' = 'concept',
+  classLevel: ClassLevel = 'mid',
   onProgress?: (update: { chunk: number; total: number; cards: number; message: string }) => void
 ): Promise<Flashcard[]> {
   const allRawCards: RawCard[] = [];
@@ -160,7 +146,7 @@ export async function generateFlashcards(
     }
 
     try {
-      const rawCards = await generateCardsForChunk(chunk.content, templateId);
+      const rawCards = await generateCardsForChunk(chunk.content, templateId, classLevel);
       chunkResults[i] = rawCards;
     } catch (err) {
       console.error(`Chunk ${i + 1} failed:`, err);
@@ -183,7 +169,7 @@ export async function generateFlashcards(
   const now = new Date().toISOString();
 
   const flashcards: Flashcard[] = deduplicated.map((rc, idx) => {
-    const cardType = rc.type || 'concept';
+    const cardType = (rc.type?.toLowerCase() as CardType) || 'concept';
     return {
       id: `card-${deckId}-${idx}-${Date.now() + idx}`,
       deckId,
@@ -191,9 +177,10 @@ export async function generateFlashcards(
       back: rc.back,
       type: cardType,
       difficulty: Math.min(5, Math.max(1, rc.difficulty || 3)),
-      // AI-assigned template, with smart fallback if AI didn't return one
-      templateKey: rc.templateKey || TYPE_TO_TEMPLATE[cardType] || 'concept_glow',
-      colorPalette: rc.colorPalette || TYPE_TO_PALETTE[cardType] || 'indigo_violet',
+      level: classLevel,
+      // Default to minimalist styling initially, specific templates will be handled by the wrapper
+      templateKey: 'minimal_dark',
+      colorPalette: 'slate_mono',
       sourceContext: rc.sourceContext || '',
       insight: rc.insight || '',
       mistake: rc.mistake || '',

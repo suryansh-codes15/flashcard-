@@ -8,12 +8,15 @@ export interface PDFChunk {
 
 export type CardType =
   | 'concept'
-  | 'definition'
-  | 'application'
   | 'example'
-  | 'relationship'
-  | 'edge_case'
-  | 'mcq';
+  | 'mcq'
+  | 'insight'
+  | 'problem'
+  | 'summary'
+  | 'visual'
+  | 'fun';
+
+export type ClassLevel = 'junior' | 'mid' | 'senior';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
@@ -48,7 +51,8 @@ export interface Flashcard {
   back: string;
   type: CardType;
   difficulty: number;       // 1-5 from AI assessment
-  templateKey?: CardTemplateKey;
+  level: ClassLevel;        // Injected for contextual styling
+  templateKey?: CardTemplateKey; // Becomes semantic in new system
   colorPalette?: ColorPalette;
   tags?: string[];
   sourceContext?: string;
@@ -73,6 +77,7 @@ export interface Deck {
   name: string;
   description?: string;
   fileName: string;
+  classLevel: ClassLevel; // The core context for the entire deck
   createdAt: string;
   updatedAt: string;
   cardCount: number;

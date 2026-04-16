@@ -8,7 +8,7 @@ import {
   CheckCircle, AlertCircle, XCircle, BookOpen, X, TrendingUp
 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
-import TemplateRenderer from '@/components/templates/TemplateRenderer';
+import FlashcardWrapper from '@/components/FlashcardWrapper';
 import SessionSummary from '@/components/practice/SessionSummary';
 import type { Flashcard, DifficultyLevel, ColorPalette, TutorAction } from '@/types';
 
@@ -321,62 +321,38 @@ export default function PracticePage() {
           )}
         </AnimatePresence>
 
-        {/* Card — 3D flip with template switching */}
-        <div style={{ perspective: '1400px' }}>
+        {/* Card — Modern Wrapper with Level-Aware Templates */}
+        <div className="relative">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={`${currentCard.id}-outer`}
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -60 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}>
-              <div
-                className="relative cursor-pointer select-none"
-                style={{ height: '400px', transformStyle: 'preserve-3d', transition: 'transform 0.6s cubic-bezier(0.4,0.2,0.2,1)', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-                onClick={() => {
-                  if (!isFlipped && !isThinkTime) handleFlip();
-                  else if (isThinkTime) { setIsThinkTime(false); setIsFlipped(true); }
-                  else setIsFlipped(false);
-                }}>
-                {/* Front */}
-                <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-                  <TemplateRenderer 
-                    card={currentCard} 
-                    side="front" 
-                    selectedOption={selectedOption}
-                    onSelect={handleSelectOption}
-                  />
-                  
-                  {/* Thinking Overlay */}
-                  <AnimatePresence>
-                    {isThinkTime && currentCard.type !== 'mcq' && (
-                      <motion.div 
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-xl bg-black/40"
-                      >
-                        <motion.div
-                          animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
-                          transition={{ repeat: Infinity, duration: 1.5 }}
-                          className="flex flex-col items-center gap-4"
-                        >
-                          <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
-                          <span className="text-sm font-bold tracking-widest uppercase text-white">Capture the answer in your mind...</span>
-                        </motion.div>
-                        <span className="absolute bottom-10 text-xs text-white/40 italic">Take a moment to truly think before revealing</span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                {/* Back */}
-                <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                  <TemplateRenderer 
-                    card={currentCard} 
-                    side="back" 
-                    selectedOption={selectedOption}
-                  />
-                </div>
-              </div>
-            </motion.div>
+            <FlashcardWrapper 
+              key={currentCard.id}
+              card={currentCard}
+              side={isFlipped ? 'back' : 'front'}
+              selectedOption={selectedOption}
+              onSelect={handleSelectOption}
+            />
+          </AnimatePresence>
+
+          {/* Thinking Overlay (Specific to non-MCQ cards) */}
+          <AnimatePresence>
+            {isThinkTime && currentCard.type !== 'mcq' && (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-3xl bg-black/60 rounded-[2.5rem]"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="flex flex-col items-center gap-4"
+                >
+                  <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
+                  <span className="text-sm font-black tracking-[0.2em] uppercase text-white">Synthesizing...</span>
+                </motion.div>
+                <span className="absolute bottom-10 text-[10px] font-black tracking-widest uppercase text-white/30">Release to reveal truth</span>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 

@@ -16,6 +16,7 @@ const RequestSchema = z.object({
   })).min(1),
   fileName: z.string().min(1),
   templateId: z.enum(['concept', 'exam', 'problem']).default('concept'),
+  classLevel: z.enum(['junior', 'mid', 'senior']).default('mid'),
 });
 
 // Helper to build a complete Flashcard with all required SRS fields
@@ -27,6 +28,7 @@ function makeCard(
     front: string;
     back: string;
     difficulty: number;
+    level: 'junior' | 'mid' | 'senior';
     templateKey: CardTemplateKey;
     colorPalette: ColorPalette;
     sourceContext: string;
@@ -39,8 +41,9 @@ function makeCard(
     deckId,
     front: fields.front,
     back: fields.back,
-    type: fields.type as Flashcard['type'],
+    type: fields.type as any,
     difficulty: fields.difficulty,
+    level: fields.level,
     templateKey: fields.templateKey,
     colorPalette: fields.colorPalette,
     sourceContext: fields.sourceContext,
@@ -54,13 +57,11 @@ function makeCard(
   };
 }
 
-function buildFallbackCards(deckId: string, templateId: string): Flashcard[] {
+function buildFallbackCards(deckId: string, templateId: string, level: 'junior' | 'mid' | 'senior'): Flashcard[] {
   if (templateId === 'exam') {
     return [
-      makeCard(deckId, 1, { type: 'definition', front: 'Define the Efficient Market Hypothesis (EMH).', back: 'An investment theory stating that share prices reflect all information, making it impossible to consistently beat the market purely through stock picking or market timing.', difficulty: 3, templateKey: 'quote_hero', colorPalette: 'indigo_violet', sourceContext: 'Financial Markets 101', tags: ['finance', 'theory'] }),
-      makeCard(deckId, 2, { type: 'relationship', front: 'Contrast Strong-form vs Semi-strong form EMH.', back: 'Strong-form assumes ALL information (public AND private) is priced in.\nSemi-strong assumes only public information is priced in, leaving insiders an edge.', difficulty: 4, templateKey: 'comparison_split', colorPalette: 'cyan_blue', sourceContext: 'Market Efficiency', tags: ['finance', 'comparison'] }),
-      makeCard(deckId, 3, { type: 'edge_case', front: 'What is the key anomaly that challenges the EMH?', back: 'The Momentum Effect — stocks that perform well recently tend to continue performing well, contradicting the EMH claim that past prices cannot predict future performance.', difficulty: 4, templateKey: 'warning_edge', colorPalette: 'rose_crimson', sourceContext: 'Market Anomalies', tags: ['edge-case', 'finance'] }),
-      makeCard(deckId, 4, { type: 'application', front: 'If a market follows Strong-form EMH, what is the optimal strategy?', back: 'A passive index fund strategy. Since all information is already priced in, active management cannot generate alpha above market returns after fees.', difficulty: 3, templateKey: 'exam_highlight', colorPalette: 'amber_orange', sourceContext: 'Investment Strategy', tags: ['application'] }),
+      makeCard(deckId, 1, { type: 'concept', level, front: 'Define the Efficient Market Hypothesis (EMH).', back: 'An investment theory stating that share prices reflect all information, making it impossible to consistently beat the market purely through stock picking or market timing.', difficulty: 3, templateKey: 'minimal_dark', colorPalette: 'indigo_violet', sourceContext: 'Financial Markets 101', tags: ['finance', 'theory'] }),
+      makeCard(deckId, 2, { type: 'mcq', level, front: 'Contrast Strong-form vs Semi-strong form EMH.', back: 'Strong-form assumes ALL information (public AND private) is priced in.\nSemi-strong assumes only public information is priced in, leaving insiders an edge.', difficulty: 4, templateKey: 'minimal_dark', colorPalette: 'cyan_blue', sourceContext: 'Market Efficiency', tags: ['finance', 'comparison'] }),
     ];
   }
 
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ error: 'AI service not configured. Please add GROQ_API_KEY to .env.local.' }), { status: 503 });
   }
 
-  const { deckId, chunks, fileName, templateId } = result.data;
+  const { deckId, chunks, fileName, templateId, classLevel } = result.data;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
         send({ type: 'start', total: chunks.length });
 
         const flashcards = await generateFlashcards(
-          deckId, chunks, fileName, templateId,
+          deckId, chunks, fileName, templateId, classLevel,
           (update) => {
             const progress = Math.round((update.chunk / update.total) * 85) + 5;
             send({ type: 'progress', ...update, progress });
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
         console.warn('AI generation failed — loading offline premium deck:', err);
         send({ type: 'progress', progress: 50, message: '🎨 Loading offline premium deck...' });
 
-        const fallbackCards = buildFallbackCards(deckId, templateId);
+        const fallbackCards = buildFallbackCards(deckId, templateId, classLevel);
 
         await new Promise(r => setTimeout(r, 1200));
         send({ type: 'progress', progress: 95, message: 'Applying visual templates...' });

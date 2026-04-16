@@ -1,148 +1,145 @@
 'use client';
-import { motion } from 'framer-motion';
-import { Check, X, Sparkles } from 'lucide-react';
-import type { Flashcard } from '@/types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, XCircle, BrainCircuit, Target, Lightbulb, AlertTriangle } from 'lucide-react';
+import type { Flashcard, ClassLevel } from '@/types';
 
-interface Props { 
-  card: Flashcard; 
-  side: 'front' | 'back'; 
+interface Props {
+  card: Flashcard;
+  level: ClassLevel;
+  side: 'front' | 'back';
   selectedOption?: string | null;
   onSelect?: (option: string) => void;
 }
 
-export default function MCQCard({ card, side, selectedOption, onSelect }: Props) {
-  const isSelected = !!selectedOption;
-  const isCorrect = selectedOption === card.correctAnswer;
+export default function MCQCard({ card, level, side, selectedOption, onSelect }: Props) {
+  const { options, correctAnswer, insight, mistake } = card;
+  const isCorrect = selectedOption === correctAnswer;
+  const isJunior = level === 'junior';
+  const isSenior = level === 'senior';
 
-  if (side === 'back') {
-    return (
-      <div className="relative w-full h-full rounded-2xl overflow-hidden flex flex-col p-8"
-        style={{ background: 'linear-gradient(135deg, #09090b 0%, #111827 100%)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        
-        <div className="flex items-center gap-2 mb-4">
-          <div className={`p-1.5 rounded-lg ${isCorrect ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-            {isCorrect ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-          </div>
-          <span className={`text-xs font-black uppercase tracking-widest ${isCorrect ? 'text-emerald-400' : 'text-rose-400'}`}>
-            {isCorrect ? 'Correct Analysis' : 'Misconception Found'}
-          </span>
-        </div>
-
-        <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
-          <div className="space-y-2">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40">Explanation</h4>
-            <p className="text-base text-white/90 leading-relaxed font-medium">{card.back}</p>
-          </div>
-
-          {(card.insight || card.mistake) && (
-            <div className="grid grid-cols-1 gap-3 pt-4 border-t border-white/5">
-              {card.insight && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-indigo-400">
-                    <Sparkles className="w-3 h-3" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Elite Insight</span>
-                  </div>
-                  <p className="text-xs text-white/50 leading-relaxed italic">"{card.insight}"</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-white/5 flex justify-center">
-            <span className="text-[10px] font-bold text-white/20 tracking-[0.2em] uppercase">FlashForge Engine</span>
-        </div>
-      </div>
-    );
-  }
+  const styles = {
+    junior: {
+      bg: 'bg-gradient-to-br from-blue-400/20 via-emerald-400/10 to-pink-500/10',
+      border: 'border-blue-500/30',
+      option: 'rounded-3xl',
+      radius: 'rounded-[3rem]',
+      emoji: '🌟',
+    },
+    mid: {
+      bg: 'bg-white/5',
+      border: 'border-white/10',
+      option: 'rounded-2xl',
+      radius: 'rounded-[2.5rem]',
+      emoji: '🎯',
+    },
+    senior: {
+      bg: 'bg-black/60',
+      border: 'border-white/5',
+      option: 'rounded-xl',
+      radius: 'rounded-[1.5rem]',
+      emoji: '✧',
+    },
+  }[level];
 
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden flex flex-col p-8"
-      style={{ background: 'linear-gradient(135deg, #0f172a 0%, #020617 100%)', border: '1px solid rgba(255,255,255,0.05)' }}>
-      
-      {/* Question section */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            Smart MCQ
-          </span>
-          <div className="flex gap-1">
-            {[1,2,3,4,5].map(d => (
-              <div key={d} className="w-1.5 h-1.5 rounded-full"
-                style={{ background: d <= card.difficulty ? '#6366f1' : 'rgba(255,255,255,0.1)' }} />
-            ))}
+    <div className={`w-full h-full relative p-10 backface-hidden ${styles.bg} backdrop-blur-3xl border ${styles.border} ${styles.radius} overflow-hidden shadow-2xl overflow-y-auto custom-scrollbar`}>
+      <div className="absolute top-0 right-0 p-8 opacity-10">
+        <Target className="w-20 h-20" />
+      </div>
+
+      <div className="flex flex-col min-h-full">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-2 rounded-xl bg-white/5">
+            <Target className="w-5 h-5 text-emerald-400" />
+          </div>
+          <span className="text-xs font-black uppercase tracking-[0.3em] opacity-40 text-emerald-400">Knowledge Challenge</span>
+          {isJunior && <span className="text-xl ml-auto">{styles.emoji}</span>}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1">
+          <h2 className={`font-black tracking-tight leading-tight mb-8 ${isJunior ? 'text-2xl' : isSenior ? 'text-3xl' : 'text-2xl'}`}>
+            {card.front}
+          </h2>
+
+          <div className="grid gap-3">
+            {options?.map((option, i) => {
+              const isSelected = selectedOption === option;
+              const isAnswer = option === correctAnswer;
+              const showResult = selectedOption !== null;
+
+              return (
+                <button
+                  key={i}
+                  disabled={showResult}
+                  onClick={() => onSelect?.(option)}
+                  className={`w-full p-4 text-left border transition-all duration-300 relative overflow-hidden ${styles.option} ${
+                    showResult
+                      ? isAnswer
+                        ? 'bg-emerald-500/20 border-emerald-500/40'
+                        : isSelected
+                        ? 'bg-rose-500/20 border-rose-500/40'
+                        : 'bg-white/5 border-white/5 opacity-40'
+                      : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      showResult
+                        ? isAnswer
+                          ? 'border-emerald-400 bg-emerald-400'
+                          : isSelected
+                          ? 'border-rose-400 bg-rose-400'
+                          : 'border-white/10'
+                        : 'border-white/20'
+                    }`}>
+                      {showResult && isAnswer && <CheckCircle2 className="w-4 h-4 text-white" />}
+                      {showResult && isSelected && !isAnswer && <XCircle className="w-4 h-4 text-white" />}
+                      {!showResult && <span className="text-[10px] font-black">{String.fromCharCode(65 + i)}</span>}
+                    </div>
+                    <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-white/70'}`}>
+                      {option}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
-        <p className="text-xl font-bold text-white leading-snug">{card.front}</p>
-      </div>
 
-      {/* Options grid */}
-      <div className="flex-1 flex flex-col gap-3">
-        {card.options?.map((option, idx) => {
-          const isThisSelected = selectedOption === option;
-          const isThisCorrect = option === card.correctAnswer;
-          
-          return (
-            <button
-              key={idx}
-              disabled={isSelected}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect?.(option);
-              }}
-              className={`
-                group relative w-full p-4 rounded-xl text-left transition-all duration-300
-                ${isSelected 
-                  ? isThisCorrect 
-                    ? 'bg-emerald-500/10 border-emerald-500/30' 
-                    : isThisSelected 
-                      ? 'bg-rose-500/10 border-rose-500/30' 
-                      : 'bg-white/5 border-white/10 opacity-40'
-                  : 'bg-white/5 border-white/10 hover:bg-white/[0.08] hover:border-white/20 hover:translate-x-1'
-                }
-                border
-              `}
+        {/* Feedback (revealed after selection) */}
+        <AnimatePresence>
+          {selectedOption && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-8 pt-8 border-t border-white/10 space-y-6"
             >
-              <div className="flex items-center gap-4">
-                <div className={`
-                  w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors
-                  ${isSelected
-                    ? isThisCorrect
-                      ? 'bg-emerald-500 text-white'
-                      : isThisSelected
-                        ? 'bg-rose-500 text-white'
-                        : 'bg-white/10 text-white/30'
-                    : 'bg-white/5 text-white/40 group-hover:bg-indigo-500/20 group-hover:text-indigo-400'
-                  }
-                `}>
-                  {String.fromCharCode(65 + idx)}
-                </div>
-                <span className={`text-sm font-medium ${isSelected && !isThisCorrect && !isThisSelected ? 'text-white/30' : 'text-white/90'}`}>
-                  {option}
-                </span>
-                
-                {isSelected && isThisCorrect && (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto text-emerald-500">
-                    <Check className="w-5 h-5" />
-                  </motion.div>
-                )}
-                {isSelected && isThisSelected && !isThisCorrect && (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto text-rose-500">
-                    <X className="w-5 h-5" />
-                  </motion.div>
-                )}
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-30">The Logic</span>
+                <p className="text-sm leading-relaxed font-bold text-white/90">{card.back}</p>
               </div>
-            </button>
-          );
-        })}
-      </div>
 
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-        <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest italic flex items-center gap-2">
-            Selection Haptics Active
-        </span>
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Lightbulb className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Insight</span>
+                  </div>
+                  <p className="text-xs leading-relaxed opacity-60 italic">"{insight || 'Master this concept to unlock deeper understandings.'}"</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">Common Trap</span>
+                  </div>
+                  <p className="text-xs leading-relaxed opacity-60 italic">"{mistake || 'Watch out for misinterpreting the core relationship.'}"</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
