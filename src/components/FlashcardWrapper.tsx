@@ -25,9 +25,9 @@ export default function FlashcardWrapper({ card, side, selectedOption, onSelect 
 
   // Level-based global variants for Framer Motion
   const levelVariants = {
-    junior: { scale: 1.05, rotate: 1, transition: { type: 'spring', stiffness: 300 } },
-    mid: { scale: 1.02, rotate: 0, transition: { type: 'spring', stiffness: 200 } },
-    senior: { scale: 1.01, rotate: 0, transition: { ease: 'easeInOut', duration: 0.4 } },
+    junior: { scale: 1.05, rotate: 1, transition: { type: 'spring' as const, stiffness: 300 } },
+    mid: { scale: 1.02, rotate: 0, transition: { type: 'spring' as const, stiffness: 200 } },
+    senior: { scale: 1.01, rotate: 0, transition: { ease: 'easeInOut' as const, duration: 0.4 } },
   };
 
   const currentLevel: ClassLevel = level || 'mid';
