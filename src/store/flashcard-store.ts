@@ -63,7 +63,15 @@ interface FlashcardStore {
 
     // Study sessions
     addSession: (session: StudySession) => void;
-    getStats: () => { totalCards: number; totalDecks: number; masteredCards: number; streak: number };
+    getStats: () => { 
+        totalCards: number; 
+        totalDecks: number; 
+        masteredCards: number; 
+        masteryPercentage: number;
+        streak: number;
+        dueToday: number;
+    };
+    getDueCount: (deckId?: string) => number;
 }
 
 export const useFlashcardStore = create<FlashcardStore>()(
@@ -131,9 +139,25 @@ export const useFlashcardStore = create<FlashcardStore>()(
 
             addSession: (session) => set((state) => ({ sessions: [...state.sessions, session] })),
 
+            getDueCount: (deckId) => {
+                const { flashcards } = get();
+                const now = new Date();
+                return flashcards.filter((c) => {
+                    const isDue = new Date(c.nextReviewDate) <= now;
+                    return deckId ? c.deckId === deckId && isDue : isDue;
+                }).length;
+            },
+
             getStats: () => {
                 const { flashcards, decks, sessions } = get();
                 const masteredCards = flashcards.filter((c) => c.interval >= 21).length;
+                const masteryPercentage = flashcards.length > 0 
+                    ? Math.round((masteredCards / flashcards.length) * 100) 
+                    : 0;
+
+                // Calculate due today
+                const now = new Date();
+                const dueToday = flashcards.filter((c) => new Date(c.nextReviewDate) <= now).length;
 
                 // Calculate streak
                 const today = new Date();
@@ -147,6 +171,12 @@ export const useFlashcardStore = create<FlashcardStore>()(
                 );
                 let streak = 0;
                 let checkDay = new Date(today);
+                
+                // If they studied today, start from today. If not, check if they studied yesterday to maintain streak
+                if (!sessionDays.has(checkDay.getTime())) {
+                    checkDay.setDate(checkDay.getDate() - 1);
+                }
+
                 while (sessionDays.has(checkDay.getTime())) {
                     streak++;
                     checkDay.setDate(checkDay.getDate() - 1);
@@ -156,7 +186,9 @@ export const useFlashcardStore = create<FlashcardStore>()(
                     totalCards: flashcards.length,
                     totalDecks: decks.length,
                     masteredCards,
+                    masteryPercentage,
                     streak,
+                    dueToday,
                 };
             },
         }),

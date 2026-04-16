@@ -29,34 +29,39 @@ COLOR PALETTE RULES (choose colorPalette from this list only):
 - "slate_mono"     → minimal, fallback, neutral
 `;
 
-const SYSTEM_INSTRUCTION = `You are an expert educator, cognitive learning specialist, and UI/UX designer. You create premium flashcards that develop genuine understanding AND assign the perfect visual template to each card.
+const SYSTEM_INSTRUCTION = `You are "The Elite Teacher" — a master of learning science and cognitive psychology. 
+Your goal is to transform raw text into a deep learning system. 
 
-Rules:
-- Cards are clear, pedagogically precise, and free of redundancy
-- Each card gets the MOST fitting templateKey and colorPalette based on its content
-- Return ONLY valid JSON. No text outside the JSON object.
+Flashcard Principles:
+1. DESIRABLE DIFFICULTY: Never ask obvious questions. Force the brain to work.
+2. WHY & HOW: Prioritize understanding the mechanics and reasoning over rote memorization.
+3. CONTEXTUAL Insight: Every card back should provide a "Deep Insight" that connects the fact to a larger mental model.
+4. MISTAKE AVOIDANCE: Explicitly call out a "Common Mistake" or "Gotcha" related to the concept.
+
+Required JSON Structure per card:
+{
+  "front": "A challenging WHY/HOW question",
+  "back": "A concise, high-impact answer",
+  "type": "concept | example | edge_case",
+  "difficulty": 1-5,
+  "templateKey": "must choose from list",
+  "colorPalette": "must choose from list",
+  "insight": "A 'Why it matters' or 'Big picture' insight",
+  "mistake": "A common point of confusion or specific error to avoid",
+  "example": "A concrete real-world application or scenario"
+}
 
 ${TEMPLATE_RULES}`;
 
 const TEMPLATES: Record<string, string> = {
-  concept: `Create 4 to 6 deeply educational flashcards from the content below.
-Mix these card types: concept, definition, relationship, edge_case.
+  concept: `Create 4 to 6 deep learning cards. Focus on the core mechanics and "how it works". 
+Ensure every card has: insight, mistake, and example.`,
+  
+  exam: `Create 5 to 7 high-yield cards. Focus on topics that are most likely to appear in advanced assessments.
+In 'insight', mention how this is typically tested.`,
 
-Return ONLY this JSON, with templateKey and colorPalette per card:
-{"cards":[{"front":"...","back":"...","type":"concept|definition|relationship|edge_case","difficulty":1-5,"templateKey":"...","colorPalette":"...","sourceContext":"exact quote from text"}]}`,
-
-  exam: `Create 5 to 7 high-yield exam-prep flashcards from the content below.
-Mix these card types: definition, application, example.
-
-Return ONLY this JSON, with templateKey and colorPalette per card:
-{"cards":[{"front":"...","back":"...","type":"definition|application|example","difficulty":1-5,"templateKey":"...","colorPalette":"...","sourceContext":"exact quote from text"}]}`,
-
-  problem: `Create 3 to 5 problem-solving flashcards from the content below.
-Structure: problem/scenario on front → step-by-step solution on back.
-Mix these card types: application, example.
-
-Return ONLY this JSON, with templateKey and colorPalette per card:
-{"cards":[{"front":"...","back":"...","type":"application|example","difficulty":1-5,"templateKey":"...","colorPalette":"...","sourceContext":"exact quote from text"}]}`,
+  problem: `Create 3 to 5 scenario-based cards. The 'front' should be a problem, and 'back' should be the solution logic.
+The 'example' should be another variant of this problem type.`,
 };
 
 interface RawCard {
@@ -67,6 +72,9 @@ interface RawCard {
   templateKey?: CardTemplateKey;
   colorPalette?: ColorPalette;
   sourceContext?: string;
+  insight?: string;
+  mistake?: string;
+  example?: string;
 }
 
 // Fallback template mapping if AI doesn't return one
@@ -128,9 +136,16 @@ export async function generateFlashcards(
 ): Promise<Flashcard[]> {
   const allRawCards: RawCard[] = [];
 
-  for (let i = 0; i < chunks.length; i++) {
+  // Process chunks in parallel with a smart concurrency limit
+  const CONCURRENCY_LIMIT = 3;
+  const chunkResults: RawCard[][] = new Array(chunks.length);
+  
+  // Create an array of indices to process
+  const indices = Array.from({ length: chunks.length }, (_, i) => i);
+  
+  // Helper to process a chunk and update progress
+  const processChunk = async (i: number) => {
     const chunk = chunks[i];
-
     if (onProgress) {
       onProgress({
         chunk: i + 1,
@@ -142,10 +157,22 @@ export async function generateFlashcards(
 
     try {
       const rawCards = await generateCardsForChunk(chunk.content, templateId);
-      allRawCards.push(...rawCards);
+      chunkResults[i] = rawCards;
     } catch (err) {
       console.error(`Chunk ${i + 1} failed:`, err);
+      chunkResults[i] = [];
     }
+  };
+
+  // Run in groups to respect concurrency limit
+  for (let i = 0; i < chunks.length; i += CONCURRENCY_LIMIT) {
+    const group = indices.slice(i, i + CONCURRENCY_LIMIT);
+    await Promise.all(group.map(idx => processChunk(idx)));
+  }
+
+  // Flatten results
+  for (const cards of chunkResults) {
+    if (cards) allRawCards.push(...cards);
   }
 
   const deduplicated = deduplicateCards(allRawCards);
@@ -164,6 +191,9 @@ export async function generateFlashcards(
       templateKey: rc.templateKey || TYPE_TO_TEMPLATE[cardType] || 'concept_glow',
       colorPalette: rc.colorPalette || TYPE_TO_PALETTE[cardType] || 'indigo_violet',
       sourceContext: rc.sourceContext || '',
+      insight: rc.insight || '',
+      mistake: rc.mistake || '',
+      example: rc.example || '',
       tags: [],
       createdAt: now,
       interval: 1,
@@ -177,19 +207,38 @@ export async function generateFlashcards(
   return flashcards;
 }
 
-export async function explainSimpler(content: string): Promise<string> {
+export type TutorAction = 'simpler' | 'example' | 'importance';
+
+export async function aiTutor(
+  action: TutorAction,
+  front: string,
+  back: string,
+  context: string
+): Promise<string> {
+  const prompts: Record<TutorAction, string> = {
+    simpler: `Explain this concept to me as if I'm a bright 16-year-old. Use a simple analogy. Avoid jargon.
+Concept: ${front}
+Explanation: ${back}`,
+    example: `Give me a totally different, concrete real-world example of this concept. 
+Concept: ${front}
+Original Answer: ${back}
+Context: ${context}`,
+    importance: `Why is this concept actually important to know? How does it connect to the real world or other ideas?
+Concept: ${front}
+Answer: ${back}`
+  };
+
   try {
     const completion = await groq.chat.completions.create({
-      messages: [{
-        role: 'user',
-        content: `Explain this to me as if I'm a bright 16-year-old. Use simple language, relatable analogies, and avoid jargon. Keep the full meaning but make it easy.\n\n"${content}"\n\nRespond with ONLY the simplified explanation text.`,
-      }],
+      messages: [{ role: 'user', content: prompts[action] }],
       model: GROQ_MODEL,
-      max_tokens: 512,
+      max_tokens: 600,
+      temperature: 0.7,
     });
-    return completion.choices[0]?.message?.content?.trim() || content;
-  } catch {
-    return content;
+    return completion.choices[0]?.message?.content?.trim() || 'I encountered an error while trying to explain this.';
+  } catch (err) {
+    console.error('Tutor failed:', err);
+    return 'The AI tutor is currently unavailable. Please try again later.';
   }
 }
 

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, RotateCcw, Eye, EyeOff, Sparkles,
-  CheckCircle, AlertCircle, XCircle, BookOpen, X
+  CheckCircle, AlertCircle, XCircle, BookOpen, X, TrendingUp
 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import TemplateRenderer from '@/components/templates/TemplateRenderer';
@@ -93,9 +93,11 @@ export default function PracticePage() {
 
   const [idx, setIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isThinkTime, setIsThinkTime] = useState(false);
   const [showSource, setShowSource] = useState(false);
-  const [simplifying, setSimplifying] = useState(false);
-  const [simpleText, setSimpleText] = useState('');
+  const [tutorLoading, setTutorLoading] = useState(false);
+  const [tutorContent, setTutorContent] = useState<{ action: string, text: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'warning' | 'error', text: string } | null>(null);
   const [sessionStats, setSessionStats] = useState({ easy: 0, medium: 0, hard: 0 });
   const [sessionDone, setSessionDone] = useState(false);
 
@@ -108,47 +110,85 @@ export default function PracticePage() {
     if (!currentCard) return;
     rateCard(currentCard.id, rating);
     setSessionStats((prev) => ({ ...prev, [rating]: prev[rating] + 1 }));
+    
+    // Feedback animation
+    const feedbackMap = {
+      easy: { type: 'success', text: 'Mastered! 🚀' },
+      medium: { type: 'warning', text: 'Getting there... 💪' },
+      hard: { type: 'error', text: 'Reviewing soon 🧠' }
+    };
+    // @ts-ignore
+    setFeedback(feedbackMap[rating]);
+    
     setIsFlipped(false);
+    setIsThinkTime(false);
     setShowSource(false);
-    setSimpleText('');
+    setTutorContent(null);
 
     setTimeout(() => {
+      setFeedback(null);
       if (idx + 1 >= cards.length) {
         setSessionDone(true);
       } else {
         setIdx((i) => i + 1);
       }
-    }, 300);
+    }, 800);
   }, [currentCard, idx, cards.length, rateCard]);
 
-  const handleExplainSimpler = async () => {
-    if (!currentCard || simplifying) return;
-    setSimplifying(true);
+  const handleFlip = () => {
+    if (isFlipped) {
+      setIsFlipped(false);
+      return;
+    }
+
+    // Entering Think Time
+    setIsThinkTime(true);
+    // Auto-reveal after 1.8s, or if clicked again
+    const timer = setTimeout(() => {
+      setIsFlipped(true);
+      setIsThinkTime(false);
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  };
+
+  const handleTutorAction = async (action: 'simpler' | 'example' | 'importance') => {
+    if (!currentCard || tutorLoading) return;
+    setTutorLoading(true);
     try {
-      const res = await fetch('/api/explain-simpler', {
+      const res = await fetch('/api/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: currentCard.back }),
+        body: JSON.stringify({ 
+          action, 
+          front: currentCard.front, 
+          back: currentCard.back, 
+          context: currentCard.sourceContext 
+        }),
       });
       const data = await res.json();
-      setSimpleText(data.explanation || currentCard.back);
+      setTutorContent({ action, text: data.result || 'Failed to get tutor feedback.' });
     } catch {
-      setSimpleText(currentCard.back);
+      setTutorContent({ action, text: 'The AI tutor is resting. Try again in a moment.' });
     } finally {
-      setSimplifying(false);
+      setTutorLoading(false);
     }
   };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setIsFlipped((v) => !v); }
+      if (e.key === ' ' || e.key === 'Enter') { 
+        e.preventDefault(); 
+        if (!isFlipped && !isThinkTime) handleFlip();
+        else { setIsThinkTime(false); setIsFlipped(true); }
+      }
       if (e.key === '1') handleRate('hard');
       if (e.key === '2') handleRate('medium');
       if (e.key === '3') handleRate('easy');
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleRate]);
+  }, [handleRate, isFlipped, isThinkTime]);
 
   if (!deck) {
     return (
@@ -234,6 +274,23 @@ export default function PracticePage() {
             style={{ background: `linear-gradient(90deg, ${paletteConfig.orb1}, ${paletteConfig.orb2})` }} />
         </div>
 
+        {/* Feedback Overlay */}
+        <AnimatePresence>
+          {feedback && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.5, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none"
+            >
+              <div className="px-10 py-5 rounded-3xl backdrop-blur-3xl border border-white/20 shadow-2xl" 
+                style={{ background: 'rgba(255,255,255,0.1)' }}>
+                <span className="text-3xl font-black text-white drop-shadow-lg">{feedback.text}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Card — 3D flip with template switching */}
         <div style={{ perspective: '1400px' }}>
           <AnimatePresence mode="wait">
@@ -245,14 +302,38 @@ export default function PracticePage() {
               transition={{ duration: 0.3, ease: 'easeOut' }}>
               <div
                 className="relative cursor-pointer select-none"
-                style={{ height: '360px', transformStyle: 'preserve-3d', transition: 'transform 0.6s cubic-bezier(0.4,0.2,0.2,1)', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-                onClick={() => setIsFlipped(v => !v)}>
+                style={{ height: '400px', transformStyle: 'preserve-3d', transition: 'transform 0.6s cubic-bezier(0.4,0.2,0.2,1)', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                onClick={() => {
+                  if (!isFlipped && !isThinkTime) handleFlip();
+                  else if (isThinkTime) { setIsThinkTime(false); setIsFlipped(true); }
+                  else setIsFlipped(false);
+                }}>
                 {/* Front */}
-                <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+                <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
                   <TemplateRenderer card={currentCard} side="front" />
+                  
+                  {/* Thinking Overlay */}
+                  <AnimatePresence>
+                    {isThinkTime && (
+                      <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-xl bg-black/40"
+                      >
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                          className="flex flex-col items-center gap-4"
+                        >
+                          <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
+                          <span className="text-sm font-bold tracking-widest uppercase text-white">Think...</span>
+                        </motion.div>
+                        <span className="absolute bottom-10 text-xs text-white/40">Tap again to reveal now</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 {/* Back */}
-                <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
                   <TemplateRenderer card={currentCard} side="back" />
                 </div>
               </div>
@@ -260,16 +341,35 @@ export default function PracticePage() {
           </AnimatePresence>
         </div>
 
-        {/* Template badge */}
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <span className="text-xs px-2.5 py-1 rounded-full font-mono"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            {currentCard.templateKey?.replace('_', ' ') || 'concept glow'}
-          </span>
-          {!isFlipped && (
-            <span className="text-xs text-white/30">Space / Click to flip</span>
+        {/* Deep Dive Insights (Visible after flip) */}
+        <AnimatePresence>
+          {isFlipped && (currentCard.insight || currentCard.mistake) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              {currentCard.insight && (
+                <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+                  <div className="flex items-center gap-2 mb-2 text-indigo-400">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Deep Insight</span>
+                  </div>
+                  <p className="text-sm text-white/60 leading-relaxed">{currentCard.insight}</p>
+                </div>
+              )}
+              {currentCard.mistake && (
+                <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10">
+                  <div className="flex items-center gap-2 mb-2 text-rose-400">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Common Mistake</span>
+                  </div>
+                  <p className="text-sm text-white/60 leading-relaxed">{currentCard.mistake}</p>
+                </div>
+              )}
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
         {/* Rating buttons */}
         <AnimatePresence>
@@ -278,22 +378,22 @@ export default function PracticePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="mt-5 space-y-3">
-              <p className="text-xs text-center font-bold text-white/50 mb-3 uppercase tracking-widest">Rate to move to next card</p>
+              className="mt-8 space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Hard', rating: 'hard' as DifficultyLevel, icon: XCircle, color: '#f87171', border: 'rgba(239,68,68,0.3)', bg: 'rgba(239,68,68,0.07)', next: 'Repeat ⏭️' },
-                  { label: 'Medium', rating: 'medium' as DifficultyLevel, icon: AlertCircle, color: '#fbbf24', border: 'rgba(245,158,11,0.3)', bg: 'rgba(245,158,11,0.07)', next: `Next: +${currentCard?.interval || 1}d ⏭️` },
-                  { label: 'Easy', rating: 'easy' as DifficultyLevel, icon: CheckCircle, color: '#34d399', border: 'rgba(16,185,129,0.3)', bg: 'rgba(16,185,129,0.07)', next: `Next: +${Math.round((currentCard?.interval || 1) * (currentCard?.easeFactor || 2.5))}d ⏭️` },
+                  { label: 'Hard', rating: 'hard' as DifficultyLevel, icon: XCircle, color: '#f87171', border: 'rgba(239,68,68,0.3)', bg: 'rgba(239,68,68,0.07)', next: 'Repeat' },
+                  { label: 'Medium', rating: 'medium' as DifficultyLevel, icon: AlertCircle, color: '#fbbf24', border: 'rgba(245,158,11,0.3)', bg: 'rgba(245,158,11,0.07)', next: `Next: +${currentCard?.interval || 1}d` },
+                  { label: 'Easy', rating: 'easy' as DifficultyLevel, icon: CheckCircle, color: '#34d399', border: 'rgba(16,185,129,0.3)', bg: 'rgba(16,185,129,0.07)', next: `Next: +${Math.round((currentCard?.interval || 1) * (currentCard?.easeFactor || 2.5))}d` },
                 ].map(({ label, rating, icon: Icon, color, border, bg, next }) => (
                   <motion.button key={label}
-                    whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    whileHover={{ y: -3, scale: 1.02, boxShadow: `0 10px 30px -10px ${border}` }} 
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => handleRate(rating)}
                     className="flex flex-col items-center gap-1.5 py-4 rounded-2xl border transition-all"
                     style={{ borderColor: border, background: bg }}>
                     <Icon className="w-6 h-6" style={{ color }} />
                     <span className="text-sm font-bold" style={{ color }}>{label}</span>
-                    <span className="text-xs text-white/30">{next}</span>
+                    <span className="text-[10px] text-white/30 uppercase tracking-tighter">{next}</span>
                   </motion.button>
                 ))}
               </div>
@@ -301,54 +401,76 @@ export default function PracticePage() {
           )}
         </AnimatePresence>
 
-        {/* Helper buttons */}
+        {/* Helper buttons (AI Tutor) */}
         {isFlipped && (
-          <div className="mt-4 flex items-center justify-center gap-3 flex-wrap">
+          <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
+            <button 
+              onClick={() => handleTutorAction('simpler')} 
+              disabled={tutorLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-white/5 border border-white/10 hover:bg-white/10"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              Explain Simpler
+            </button>
+            <button 
+              onClick={() => handleTutorAction('example')} 
+              disabled={tutorLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-white/5 border border-white/10 hover:bg-white/10"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+              Another Example
+            </button>
+            <button 
+              onClick={() => handleTutorAction('importance')} 
+              disabled={tutorLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-white/5 border border-white/10 hover:bg-white/10"
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
+              Why It Matters
+            </button>
             {currentCard.sourceContext && (
               <button onClick={() => setShowSource(v => !v)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-white/40 hover:text-white/70 transition-colors"
-                style={{ background: 'rgba(255,255,255,0.05)' }}>
-                <BookOpen className="w-4 h-4" />
-                {showSource ? 'Hide source' : 'Show source'}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white/40 hover:text-white/70 transition-colors bg-white/5 border border-white/5">
+                {showSource ? 'Hide source' : 'See Context'}
               </button>
             )}
-            <button onClick={handleExplainSimpler} disabled={simplifying}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-40"
-              style={{ background: `${paletteConfig.orb1}18`, color: paletteConfig.orb1, border: `1px solid ${paletteConfig.orb1}30` }}>
-              <Sparkles className="w-4 h-4" />
-              {simplifying ? 'Simplifying...' : 'Explain simpler'}
-            </button>
           </div>
         )}
+
+        {/* Tutor Response Panel */}
+        <AnimatePresence>
+          {tutorContent && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: 10 }}
+              className="mt-6 p-6 rounded-3xl relative overflow-hidden" 
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/40" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-indigo-400">
+                    {tutorContent.action === 'simpler' ? 'Simpler Explanation' : 
+                     tutorContent.action === 'example' ? 'Practical Example' : 'Core Importance'}
+                  </span>
+                </div>
+                <button onClick={() => setTutorContent(null)}><X className="w-4 h-4 text-white/20 hover:text-white" /></button>
+              </div>
+              <p className="text-sm leading-relaxed text-white/80">{tutorContent.text}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Source panel */}
         <AnimatePresence>
           {showSource && currentCard.sourceContext && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="mt-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold tracking-widest uppercase text-white/30">Source</span>
-                <button onClick={() => setShowSource(false)}><X className="w-3.5 h-3.5 text-white/30" /></button>
-              </div>
-              <p className="text-sm leading-relaxed italic text-white/50">"{currentCard.sourceContext}"</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Simpler explanation panel */}
-        <AnimatePresence>
-          {simpleText && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="mt-4 p-4 rounded-2xl"
-              style={{ background: `${paletteConfig.orb1}10`, border: `1px solid ${paletteConfig.orb1}25` }}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" style={{ color: paletteConfig.orb1 }} />
-                  <span className="text-xs font-semibold" style={{ color: paletteConfig.orb1 }}>Simpler explanation</span>
-                </div>
-                <button onClick={() => setSimpleText('')}><X className="w-3.5 h-3.5 text-white/30" /></button>
-              </div>
-              <p className="text-sm leading-relaxed text-white/60">{simpleText}</p>
+              className="mt-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <p className="text-xs leading-relaxed italic text-white/30">"{currentCard.sourceContext}"</p>
             </motion.div>
           )}
         </AnimatePresence>

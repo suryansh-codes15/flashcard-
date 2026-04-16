@@ -50,6 +50,9 @@ export interface Flashcard {
   colorPalette?: ColorPalette;
   tags?: string[];
   sourceContext?: string;
+  insight?: string;    // Deep-dive insight from AI
+  mistake?: string;    // Common mistake/gotcha
+  example?: string;    // Real-world application example
   createdAt: string;
   // SRS Fields
   interval: number;
