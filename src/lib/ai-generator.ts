@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import type { PDFChunk, Flashcard, CardType, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
+import type { PDFChunk, Flashcard, CardType, ClassLevel, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
