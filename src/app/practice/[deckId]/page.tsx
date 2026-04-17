@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import FlashcardWrapper from '@/components/FlashcardWrapper';
+import FlashCard from '@/components/FlashCard';
 import SessionSummary from '@/components/practice/SessionSummary';
+import VictoryConfetti from '@/components/VictoryConfetti';
 import type { Flashcard, DifficultyLevel, ColorPalette, TutorAction } from '@/types';
 
 // Ambient background configs per palette
@@ -103,8 +105,22 @@ export default function PracticePage() {
   const [sessionStats, setSessionStats] = useState({ easy: 0, medium: 0, hard: 0, correctMCQ: 0 });
   const [sessionDone, setSessionDone] = useState(false);
   const [aiNote, setAiNote] = useState<string | null>(null);
+  const [correctStreak, setCorrectStreak] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const currentCard = cards[idx];
+
+  // Kids Subject Detection
+  const getSubject = (name: string): 'math' | 'science' | 'geography' | 'history' | 'language' => {
+    const n = name.toLowerCase();
+    if (n.includes('math') || n.includes('number') || n.includes('calc')) return 'math';
+    if (n.includes('geo') || n.includes('map') || n.includes('world') || n.includes('city')) return 'geography';
+    if (n.includes('history') || n.includes('war') || n.includes('ancient') || n.includes('king')) return 'history';
+    if (n.includes('lang') || n.includes('word') || n.includes('phrase') || n.includes('speak')) return 'language';
+    return 'science'; // Default subject
+  };
+
+  const subject = deck ? getSubject(deck.name) : 'science';
   const progress = cards.length > 0 ? (idx / cards.length) * 100 : 0;
   const currentPalette: ColorPalette = currentCard?.colorPalette || 'indigo_violet';
   const paletteConfig = PALETTE_BACKGROUNDS[currentPalette];
@@ -113,6 +129,18 @@ export default function PracticePage() {
     if (!currentCard) return;
     rateCard(currentCard.id, rating);
     setSessionStats((prev) => ({ ...prev, [rating]: prev[rating] + 1 }));
+    
+    // Gamification: Confetti every 5 correct
+    if (rating === 'easy') {
+      const nextStreak = correctStreak + 1;
+      setCorrectStreak(nextStreak);
+      if (nextStreak % 5 === 0) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+    } else {
+      setCorrectStreak(0);
+    }
     
     // Auto-trigger misunderstanding analysis for 'hard' (Again)
     if (rating === 'hard') {
@@ -272,233 +300,71 @@ export default function PracticePage() {
   }
 
   return (
-    <div className="relative min-h-screen">
-      {/* Dynamic ambient background - cross-fades with each card */}
-      <AnimatePresence mode="sync">
-        <AmbientBackground key={currentPalette} palette={currentPalette} />
-      </AnimatePresence>
+    <div className="relative min-h-screen animate-kids-bg overflow-hidden">
+      {/* Confetti celebration */}
+      {showConfetti && <VictoryConfetti />}
 
-      <div className="relative z-10 max-w-2xl mx-auto pt-20 pb-16 px-4">
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-6">
+      {/* Star Particles */}
+      {[...Array(12)].map((_, i) => (
+        <div 
+          key={i} 
+          className="star-particle w-1.5 h-1.5" 
+          style={{ 
+            top: `${Math.random() * 100}%`, 
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`
+          }} 
+        />
+      ))}
+
+      <div className="relative z-10 max-w-2xl mx-auto pt-16 pb-16 px-4">
+        {/* KIDS Top bar */}
+        <div className="flex items-center justify-between mb-8">
           <button onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            <span>{deck.name}</span>
+            className="flex items-center gap-2 group">
+            <div className="p-2 rounded-xl bg-white/20 hover:scale-110 transition-transform">
+              <ArrowLeft className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500/60">Study Deck</span>
+              <span className="text-sm font-black text-slate-800">{deck.name}</span>
+            </div>
           </button>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-white/40">{idx + 1} / {cards.length}</span>
-            <div className="flex gap-1.5">
-              <span className="text-xs font-semibold text-emerald-400">{sessionStats.easy}✓</span>
-              <span className="text-xs font-semibold text-amber-400">{sessionStats.medium}~</span>
-              <span className="text-xs font-semibold text-red-400">{sessionStats.hard}✗</span>
+
+          <div className="flex items-center gap-4">
+            {/* 7-Day Streak */}
+            <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full shadow-sm">
+              <span className="text-sm">🔥</span>
+              <span className="text-xs font-black text-orange-600 tracking-tighter">7 DAY STREAK</span>
+            </div>
+            
+            {/* Level Badge */}
+            <div className="flex items-center gap-1.5 bg-indigo-500 border-2 border-indigo-400 px-3 py-1.5 rounded-full shadow-lg shadow-indigo-200">
+              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <span className="text-xs font-black text-white tracking-widest uppercase">LEVEL 4</span>
             </div>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="h-1 rounded-full mb-6 overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <motion.div className="h-full rounded-full"
-            animate={{ width: `${progress}%` }}
-            transition={{ ease: 'easeOut', duration: 0.5 }}
-            style={{ background: `linear-gradient(90deg, ${paletteConfig.orb1}, ${paletteConfig.orb2})` }} />
+        {/* Card Switcher for Kids Edition */}
+        <div className="relative py-10">
+          <FlashCard 
+            key={currentCard.id}
+            subject={subject}
+            question={currentCard.front}
+            answer={currentCard.back}
+            mastery={Math.round((currentCard.difficulty || 1) * 20)}
+            delay={0}
+            onRate={handleRate}
+          />
         </div>
 
-        {/* Feedback Overlay */}
-        <AnimatePresence>
-          {feedback && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.5, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none"
-            >
-              <div className="px-10 py-5 rounded-3xl backdrop-blur-3xl border border-white/20 shadow-2xl" 
-                style={{ background: 'rgba(255,255,255,0.1)' }}>
-                <span className="text-3xl font-black text-white drop-shadow-lg">{feedback.text}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Card — Modern Wrapper with Level-Aware Templates */}
-        <div 
-          className="relative cursor-pointer select-none h-[450px] w-full"
-          onClick={() => {
-            console.log('Card clicked, current state:', { isFlipped, isThinkTime });
-            if (!isFlipped && !isThinkTime) handleFlip();
-            else if (isThinkTime) { setIsThinkTime(false); setIsFlipped(true); }
-            else setIsFlipped(false);
-          }}
-        >
-          <AnimatePresence mode="wait">
-            <FlashcardWrapper 
-              key={`${currentCard.id}-${isFlipped}`}
-              card={currentCard}
-              side={isFlipped ? 'back' : 'front'}
-              selectedOption={selectedOption}
-              onSelect={handleSelectOption}
-            />
-          </AnimatePresence>
-
-          {/* Thinking Overlay (Specific to non-MCQ cards) */}
-          <AnimatePresence>
-            {isThinkTime && currentCard.type !== 'mcq' && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-3xl bg-black/60 rounded-[2.5rem]"
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="flex flex-col items-center gap-4"
-                >
-                  <div className="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
-                  <span className="text-sm font-black tracking-[0.2em] uppercase text-white">Synthesizing...</span>
-                </motion.div>
-                <span className="absolute bottom-10 text-[10px] font-black tracking-widest uppercase text-white/30">Release to reveal truth</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Action hints */}
+        <div className="mt-12 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">
+            Tap the card to reveal the hidden truth
+          </p>
         </div>
-
-        {/* Deep Dive Insights (Visible after flip) */}
-        <AnimatePresence>
-          {isFlipped && (currentCard.insight || currentCard.mistake) && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-              {currentCard.insight && (
-                <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
-                  <div className="flex items-center gap-2 mb-2 text-indigo-400">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Deep Insight</span>
-                  </div>
-                  <p className="text-sm text-white/60 leading-relaxed">{currentCard.insight}</p>
-                </div>
-              )}
-              {currentCard.mistake && (
-                <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10">
-                  <div className="flex items-center gap-2 mb-2 text-rose-400">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Common Mistake</span>
-                  </div>
-                  <p className="text-sm text-white/60 leading-relaxed">{currentCard.mistake}</p>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Rating buttons */}
-        <AnimatePresence>
-          {isFlipped && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="mt-8 space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: 'Hard', rating: 'hard' as DifficultyLevel, icon: XCircle, color: '#f87171', border: 'rgba(239,68,68,0.3)', bg: 'rgba(239,68,68,0.07)', next: 'Repeat' },
-                  { label: 'Medium', rating: 'medium' as DifficultyLevel, icon: AlertCircle, color: '#fbbf24', border: 'rgba(245,158,11,0.3)', bg: 'rgba(245,158,11,0.07)', next: `Next: +${currentCard?.interval || 1}d` },
-                  { label: 'Easy', rating: 'easy' as DifficultyLevel, icon: CheckCircle, color: '#34d399', border: 'rgba(16,185,129,0.3)', bg: 'rgba(16,185,129,0.07)', next: `Next: +${Math.round((currentCard?.interval || 1) * (currentCard?.easeFactor || 2.5))}d` },
-                ].map(({ label, rating, icon: Icon, color, border, bg, next }) => (
-                  <motion.button key={label}
-                    whileHover={{ y: -3, scale: 1.02, boxShadow: `0 10px 30px -10px ${border}` }} 
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleRate(rating)}
-                    className="flex flex-col items-center gap-1.5 py-4 rounded-2xl border transition-all"
-                    style={{ borderColor: border, background: bg }}>
-                    <Icon className="w-6 h-6" style={{ color }} />
-                    <span className="text-sm font-bold" style={{ color }}>{label}</span>
-                    <span className="text-[10px] text-white/30 uppercase tracking-tighter">{next}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Helper buttons (AI Tutor) */}
-        {isFlipped && (
-          <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
-            <button 
-              onClick={() => handleTutorAction('simpler')} 
-              disabled={tutorLoading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-white/5 border border-white/10 hover:bg-white/10"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              Explain Simpler
-            </button>
-            <button 
-              onClick={() => handleTutorAction('example')} 
-              disabled={tutorLoading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-white/5 border border-white/10 hover:bg-white/10"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-              Another Example
-            </button>
-            <button 
-              onClick={() => handleTutorAction('harder')} 
-              disabled={tutorLoading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 group"
-            >
-              <TrendingUp className="w-3.5 h-3.5 group-hover:translate-y-[-1px] transition-transform" />
-              Level Up
-            </button>
-            {currentCard.sourceContext && (
-              <button onClick={() => setShowSource(v => !v)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white/40 hover:text-white/70 transition-colors bg-white/5 border border-white/5">
-                {showSource ? 'Hide source' : 'See Context'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Tutor Response Panel */}
-        <AnimatePresence>
-          {tutorContent && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              exit={{ opacity: 0, y: 10 }}
-              className="mt-6 p-6 rounded-3xl relative overflow-hidden" 
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/40" />
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-indigo-400" />
-                  </div>
-                  <span className="text-xs font-black uppercase tracking-widest text-indigo-400">
-                    {tutorContent.action === 'simpler' ? 'Simpler Explanation' : 
-                     tutorContent.action === 'example' ? 'Practical Example' : 
-                     tutorContent.action === 'harder' ? 'Mastery Challenge' : 
-                     tutorContent.action === 'misunderstanding' ? 'AI Misconception Analysis' : 'Core Importance'}
-                  </span>
-                </div>
-                <button onClick={() => setTutorContent(null)}><X className="w-4 h-4 text-white/20 hover:text-white" /></button>
-              </div>
-              <p className="text-sm leading-relaxed text-white/80 whitespace-pre-wrap">{tutorContent.text}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Source panel */}
-        <AnimatePresence>
-          {showSource && currentCard.sourceContext && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="mt-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <p className="text-xs leading-relaxed italic text-white/30">"{currentCard.sourceContext}"</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );
