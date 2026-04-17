@@ -2,50 +2,20 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Upload, FileText, Sparkles, AlertCircle, CheckCircle2,
-  Loader2, X, BookOpen, GraduationCap, Wrench, ChevronRight, Zap
+import { 
+  Upload, FileText, Sparkles, AlertCircle, CheckCircle2, 
+  Loader2, X, ChevronRight, Brain, Zap, Rocket
 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import { generateId, getDeckEmoji } from '@/lib/utils';
 import type { GenerationProgress, Flashcard, ClassLevel } from '@/types';
+import MascotCharacter from '@/components/MascotCharacter';
 
-const TEMPLATES = [
-  {
-    id: 'concept' as const,
-    label: 'Deep Learning',
-    emoji: '🧠',
-    icon: BookOpen,
-    desc: 'Concepts, definitions, relationships & edge cases',
-    color: '#6366f1',
-    glow: 'rgba(99,102,241,0.3)',
-    bg: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))',
-    border: 'rgba(99,102,241,0.35)',
-  },
-  {
-    id: 'exam' as const,
-    label: 'Exam Prep',
-    emoji: '🎓',
-    icon: GraduationCap,
-    desc: 'High-yield definitions, applications & examples',
-    color: '#f59e0b',
-    glow: 'rgba(245,158,11,0.3)',
-    bg: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.06))',
-    border: 'rgba(245,158,11,0.35)',
-  },
-  {
-    id: 'problem' as const,
-    label: 'Problem Solving',
-    emoji: '⚡',
-    icon: Zap,
-    desc: 'Step-by-step worked examples & case studies',
-    color: '#10b981',
-    glow: 'rgba(16,185,129,0.3)',
-    bg: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(20,184,166,0.06))',
-    border: 'rgba(16,185,129,0.35)',
-  },
-];
+const MODES = [
+  { id: 'concept', label: 'Deep Learning', emoji: '🧠', desc: 'Core concept & definitions', mascot: 'science', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' },
+  { id: 'exam', label: 'Exam Prep', emoji: '🎓', desc: 'High-yield prep & examples', mascot: 'history', color: 'text-pink-400', border: 'border-pink-500/30', bg: 'bg-pink-500/10' },
+  { id: 'problem', label: 'Advanced Logic', emoji: '⚡', desc: 'Step-by-step logic labs', mascot: 'math', color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
+] as const;
 
 export default function UploadPage() {
   const router = useRouter();
@@ -62,8 +32,6 @@ export default function UploadPage() {
   const [newDeckId, setNewDeckId] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedTemplate = TEMPLATES.find(t => t.id === template)!;
-
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -77,20 +45,12 @@ export default function UploadPage() {
     if (selected && selected.name.endsWith('.pdf')) setFile(selected);
   };
 
-  const resetFile = () => {
-    setFile(null);
-    setStage('idle');
-    setError('');
-    setProgress(0);
-    setStatusMsg('');
-  };
-
   const handleGenerate = async () => {
     if (!file) return;
     setError('');
     setStage('uploading');
     setProgress(5);
-    setStatusMsg('Extracting text from PDF...');
+    setStatusMsg('Extracting tactical data from PDF...');
 
     try {
       const formData = new FormData();
@@ -99,8 +59,7 @@ export default function UploadPage() {
       const uploadData = await uploadRes.json();
 
       if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed');
-      if (!uploadData.chunks?.length) throw new Error('No readable text found in PDF.');
-
+      
       const deckId = generateId();
       const deck = {
         id: deckId,
@@ -110,17 +69,17 @@ export default function UploadPage() {
         updatedAt: new Date().toISOString(),
         cardCount: 0,
         masteredCount: 0,
+        masteryPercentage: 0,
         templateId: template,
         classLevel: classLevel,
         emoji: getDeckEmoji(file.name),
-        description: `Generated from ${file.name} with ${uploadData.chunks.length} sections`,
+        description: `Generated Forge from ${file.name}`,
       };
       addDeck(deck);
       setNewDeckId(deckId);
 
       setStage('generating');
-      setProgress(10);
-      setStatusMsg('AI is reading your PDF & assigning visual templates...');
+      setStatusMsg('AI Forge is crafting visual templates...');
 
       const genRes = await fetch('/api/generate-flashcards', {
         method: 'POST',
@@ -128,10 +87,7 @@ export default function UploadPage() {
         body: JSON.stringify({ deckId, chunks: uploadData.chunks, fileName: file.name, templateId: template, classLevel }),
       });
 
-      if (!genRes.ok) {
-        const err = await genRes.json();
-        throw new Error(err.error || 'Generation failed');
-      }
+      if (!genRes.ok) throw new Error('Generation failed');
 
       const reader = genRes.body!.getReader();
       const decoder = new TextDecoder();
@@ -150,7 +106,7 @@ export default function UploadPage() {
 
           if (data.type === 'progress') {
             setProgress(data.progress || 0);
-            setStatusMsg(data.message || 'Generating...');
+            setStatusMsg(data.message || 'Forging...');
             if (data.cards) setCardCount(data.cards);
           } else if (data.type === 'complete') {
             const cards = data.flashcards as Flashcard[];
@@ -158,270 +114,208 @@ export default function UploadPage() {
             setCardCount(cards.length);
             setProgress(100);
             setStage('done');
-            setStatusMsg(`Created ${cards.length} cards!`);
           } else if (data.type === 'error') {
             throw new Error(data.error || 'Generation failed');
           }
         }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } catch (err: any) {
+      setError(err.message || 'Forge Engine Failure');
       setStage('error');
     }
   };
 
   return (
-    <div className="relative min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      {/* Ambient background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <motion.div className="absolute w-[800px] h-[800px] rounded-full top-[-20%] left-[-15%] opacity-[0.07]"
-          style={{ background: `radial-gradient(circle, ${selectedTemplate.color} 0%, transparent 70%)`, filter: 'blur(80px)' }}
-          animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 8, repeat: Infinity }} />
-        <motion.div className="absolute w-[600px] h-[600px] rounded-full bottom-[-10%] right-[-10%] opacity-[0.05]"
-          style={{ background: `radial-gradient(circle, ${selectedTemplate.color} 0%, transparent 70%)`, filter: 'blur(100px)' }}
-          animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 12, repeat: Infinity }} />
+    <div className="min-h-screen py-16 px-6 max-w-4xl mx-auto space-y-12">
+      
+      {/* 🚀 FORGE HEADER */}
+      <div className="text-center space-y-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-black text-purple-400 uppercase tracking-widest leading-none">
+          <Sparkles className="w-3 h-3" />
+          Engine: AI Art Director v2
+        </div>
+        <h1 className="text-5xl font-black text-white tracking-tight">
+          Forge New <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Collection</span>
+        </h1>
+        <p className="text-gray-500 text-sm font-medium tracking-wide max-w-lg mx-auto">
+          Upload any PDF. Our AI Forge will extract the core logic and auto-assign 
+          beautiful visual templates to every card.
+        </p>
       </div>
 
-      <div className="relative z-10 min-h-screen pt-28 pb-20 px-4">
-        <div className="max-w-2xl mx-auto">
-
-          {/* Header */}
-          <motion.div className="text-center mb-12" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5 text-sm font-semibold"
-              style={{ background: `${selectedTemplate.color}15`, color: selectedTemplate.color, border: `1px solid ${selectedTemplate.color}30` }}>
-              <Sparkles className="w-4 h-4" />
-              AI Art Director Mode
-            </div>
-            <h1 className="text-5xl font-black mb-3 leading-tight" style={{ fontFamily: 'Syne, sans-serif' }}>
-              Create a New{' '}
-              <span style={{ background: `linear-gradient(135deg, ${selectedTemplate.color}, ${selectedTemplate.color}88)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                Deck
-              </span>
-            </h1>
-            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
-              AI reads your PDF and auto-assigns beautiful visual templates to every card
-            </p>
-          </motion.div>
-
-          {/* Template Selection */}
-          <motion.div className="mb-7" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: 'var(--text-muted)' }}>
-              Choose Study Mode
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {TEMPLATES.map((t) => (
-                <motion.button key={t.id} onClick={() => setTemplate(t.id)}
-                  whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
-                  className="relative p-4 rounded-2xl text-left transition-all duration-300 overflow-hidden"
-                  style={{
-                    background: template === t.id ? t.bg : 'var(--bg-card)',
-                    border: `1px solid ${template === t.id ? t.border : 'var(--border-strong)'}`,
-                    boxShadow: template === t.id ? `0 8px 32px ${t.glow}` : 'none',
-                  }}>
-                  {template === t.id && (
-                    <motion.div className="absolute inset-0 opacity-30" layoutId="template-glow"
-                      style={{ background: t.bg }} />
-                  )}
-                  <div className="relative">
-                    <div className="text-2xl mb-2">{t.emoji}</div>
-                    <div className="font-bold text-sm mb-1" style={{ color: template === t.id ? t.color : 'var(--text-primary)' }}>
-                      {t.label}
-                    </div>
-                    <div className="text-xs leading-relaxed hidden sm:block" style={{ color: 'var(--text-muted)' }}>
-                      {t.desc}
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Class Level Selection */}
-          <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: 'var(--text-muted)' }}>
-              Select Academic Level
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { id: 'junior' as const, label: 'Junior', sub: 'Class 3–5', emoji: '🎈', color: '#f472b6' },
-                { id: 'mid' as const, label: 'Mid', sub: 'Class 6–8', emoji: '🌱', color: '#60a5fa' },
-                { id: 'senior' as const, label: 'Senior', sub: 'Class 9–12', emoji: '🎓', color: '#818cf8' },
-              ].map((l) => (
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        
+        {/* LEFT COLUMN: CONFIG */}
+        <div className="lg:col-span-7 space-y-10">
+          
+          {/* MODE SELECT */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-white/30 px-2">Forge Mode</h3>
+            <div className="grid grid-cols-1 gap-3">
+              {MODES.map((mode) => (
                 <button
-                  key={l.id}
-                  onClick={() => setClassLevel(l.id)}
-                  className={`p-4 rounded-2xl text-left border transition-all ${
-                    classLevel === l.id 
-                      ? 'border-white/20 bg-white/5 shadow-lg' 
-                      : 'border-white/5 bg-transparent hover:bg-white/5 opacity-60'
-                  }`}
+                  key={mode.id}
+                  onClick={() => setTemplate(mode.id)}
+                  className={`flex items-center gap-5 p-5 rounded-[24px] border-2 transition-all group text-left
+                    ${template === mode.id 
+                      ? `${mode.border} ${mode.bg} shadow-[0_0_30px_rgba(0,0,0,0.3)]` 
+                      : 'border-white/5 bg-white/[0.02] hover:bg-white/5'
+                    }`}
                 >
-                  <div className="text-xl mb-1">{l.emoji}</div>
-                  <div className="font-bold text-sm" style={{ color: classLevel === l.id ? l.color : 'white' }}>{l.label}</div>
-                  <div className="text-[10px] uppercase font-black tracking-widest opacity-40">{l.sub}</div>
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all
+                    ${template === mode.id ? 'bg-white/10 scale-110' : 'bg-white/5'}`}>
+                    <MascotCharacter subject={mode.mascot} className="w-8 h-8" />
+                  </div>
+                  <div className="flex-1">
+                    <div className={`font-black uppercase tracking-widest text-[11px] mb-1 ${mode.color}`}>
+                      {mode.label} {mode.emoji}
+                    </div>
+                    <div className="text-xs font-bold text-gray-500 leading-none">{mode.desc}</div>
+                  </div>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
+                    ${template === mode.id ? 'border-purple-400 bg-purple-400/20' : 'border-white/10'}`}>
+                    {template === mode.id && <div className="w-2 h-2 rounded-full bg-purple-400" />}
+                  </div>
                 </button>
               ))}
             </div>
-          </motion.div>
+          </section>
 
-          {/* Drop Zone */}
-          <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            {!file ? (
-              <motion.div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => inputRef.current?.click()}
-                animate={isDragging ? { scale: 1.02 } : { scale: 1 }}
-                className="relative border-2 border-dashed rounded-3xl p-14 text-center cursor-pointer transition-all duration-300"
-                style={{
-                  borderColor: isDragging ? selectedTemplate.color : 'var(--border-strong)',
-                  background: isDragging ? `${selectedTemplate.color}08` : 'var(--bg-card)',
-                }}>
-                <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
-                <motion.div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
-                  style={{ background: `linear-gradient(135deg, ${selectedTemplate.color}, ${selectedTemplate.color}aa)`, boxShadow: `0 12px 40px ${selectedTemplate.glow}` }}
-                  animate={{ rotate: isDragging ? 12 : 0 }}
-                  whileHover={{ rotate: 8, scale: 1.08 }}>
-                  <Upload className="w-8 h-8 text-white" />
-                </motion.div>
-                <p className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  {isDragging ? '✦ Drop to unlock your PDF ✦' : 'Drop your PDF here'}
-                </p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  or click to browse · Max 20 MB · Any academic PDF
-                </p>
+          {/* LEVEL SELECT */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-white/30 px-2">Academic Calibration</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: 'junior' as const, label: 'Junior', level: 'Classes 3-5', color: 'text-pink-400' },
+                { id: 'mid' as const, label: 'Standard', level: 'Classes 6-10', color: 'text-blue-400' },
+                { id: 'senior' as const, label: 'Senior', level: 'Classes 11-12+', color: 'text-purple-400' },
+              ].map((lvl) => (
+                <button
+                  key={lvl.id}
+                  onClick={() => setClassLevel(lvl.id)}
+                  className={`flex flex-col gap-1 p-5 rounded-[24px] border-2 transition-all text-left
+                    ${classLevel === lvl.id 
+                      ? 'border-white/20 bg-white/10 shadow-lg' 
+                      : 'border-white/5 bg-white/[0.02] hover:bg-white/5'
+                    }`}
+                >
+                  <div className={`text-[10px] font-black uppercase tracking-widest ${classLevel === lvl.id ? lvl.color : 'text-gray-500'}`}>
+                    {lvl.label}
+                  </div>
+                  <div className="text-[9px] font-bold text-gray-600">{lvl.level}</div>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
 
-                {/* Template preview pills */}
-                <div className="flex flex-wrap gap-2 justify-center mt-5">
-                  {['Concept Glow', 'Timeline Steps', 'Formula Dark', 'Warning Edge', 'Exam Highlight'].map(name => (
-                    <span key={name} className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                      style={{ background: `${selectedTemplate.color}15`, color: selectedTemplate.color, border: `1px solid ${selectedTemplate.color}25` }}>
-                      {name}
-                    </span>
-                  ))}
-                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
-                    +7 more
-                  </span>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-                className="p-5 rounded-3xl flex items-center gap-4"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)' }}>
-                <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-6 h-6 text-red-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate" style={{ color: 'var(--text-primary)' }}>{file.name}</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-                {stage === 'idle' && (
-                  <button onClick={resetFile}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-red-500/10"
-                    style={{ color: 'var(--text-muted)' }}>
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Error */}
-          <AnimatePresence>
-            {error && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                className="mb-5 p-4 rounded-2xl flex items-center gap-3"
-                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-400">{error}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Generation Progress */}
-          <AnimatePresence>
-            {(stage === 'uploading' || stage === 'generating') && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="mb-6 p-6 rounded-3xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                      style={{ background: `${selectedTemplate.color}20` }}>
-                      <Loader2 className="w-4 h-4 animate-spin" style={{ color: selectedTemplate.color }} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{statusMsg}</p>
-                      {cardCount > 0 && (
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{cardCount} cards crafted so far</p>
-                      )}
+        {/* RIGHT COLUMN: CAPTURE AREA */}
+        <div className="lg:col-span-5">
+          <div className="sticky top-28 space-y-6">
+            
+            {/* DROP ZONE */}
+            <div 
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => inputRef.current?.click()}
+              className={`relative h-[400px] rounded-[40px] border-2 border-dashed flex flex-col items-center justify-center gap-6 cursor-pointer transition-all overflow-hidden
+                ${isDragging ? 'border-purple-500 bg-purple-500/10 scale-[1.02]' : 'border-white/10 bg-white/[0.02] hover:border-purple-500/30'}
+                ${stage !== 'idle' ? 'pointer-events-none' : ''}
+              `}
+            >
+              <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
+              
+              {stage === 'idle' ? (
+                <>
+                  <div className="w-20 h-20 rounded-3xl bg-purple-600/20 border border-purple-500/20 flex items-center justify-center shadow-[0_0_50px_rgba(124,58,237,0.15)] animate-antigravity">
+                    <Upload className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <div className="text-center space-y-1 px-8">
+                    <p className="text-sm font-black text-white uppercase tracking-widest">
+                      {file ? file.name : 'Target Acquired'}
+                    </p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
+                      {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · Ready for Forge` : 'Drop PDF or Click to browse'}
+                    </p>
+                  </div>
+                  {file && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                      className="absolute top-6 right-6 p-2 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </>
+              ) : stage === 'uploading' || stage === 'generating' ? (
+                <div className="flex flex-col items-center gap-6 px-10 text-center">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full border-4 border-purple-500/10 border-t-purple-500 animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Zap className="w-8 h-8 text-purple-400 animate-pulse" />
                     </div>
                   </div>
-                  <span className="text-2xl font-black" style={{ color: selectedTemplate.color }}>{progress}%</span>
+                  <div className="space-y-2">
+                    <div className="text-2xl font-black text-white">{progress}%</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 animate-pulse">{statusMsg}</div>
+                  </div>
+                  {cardCount > 0 && (
+                    <div className="px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest">
+                      {cardCount} Cards Forged
+                    </div>
+                  )}
                 </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                  <motion.div className="h-full rounded-full"
-                    animate={{ width: `${progress}%` }}
-                    transition={{ ease: 'easeOut', duration: 0.5 }}
-                    style={{ background: `linear-gradient(90deg, ${selectedTemplate.color}, ${selectedTemplate.color}99)`, boxShadow: `0 0 16px ${selectedTemplate.glow}` }} />
-                </div>
-                {/* Shimmer hint text */}
-                <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-muted)' }}>
-                  🎨 AI Art Director is assigning visual templates per card
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Success */}
-          <AnimatePresence>
-            {stage === 'done' && (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="mb-6 p-8 rounded-3xl text-center"
-                style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                  style={{ background: 'rgba(16,185,129,0.15)' }}>
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-                </div>
-                <h3 className="text-2xl font-black mb-2" style={{ color: 'var(--text-primary)', fontFamily: 'Syne, sans-serif' }}>
-                  {cardCount} Cards Created!
-                </h3>
-                <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-                  Each card has a unique visual template chosen by the AI Art Director.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <motion.button onClick={() => router.push(`/practice/${newDeckId}`)}
-                    whileHover={{ y: -2 }} className="btn-brand">
-                    <Sparkles className="w-4 h-4" />
-                    Start Studying
-                    <ChevronRight className="w-4 h-4" />
-                  </motion.button>
-                  <button onClick={() => router.push('/dashboard')} className="btn-secondary">
-                    Go to Dashboard
+              ) : stage === 'done' ? (
+                <div className="flex flex-col items-center gap-6 px-10 text-center">
+                  <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-black text-white">Forge Complete!</h3>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                      {cardCount} Tactical cards are ready for your study session
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => router.push(`/practice/${newDeckId}`)}
+                    className="mt-4 px-8 py-4 rounded-2xl bg-emerald-600 text-white font-black flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-emerald-900/20"
+                  >
+                    <Rocket className="w-5 h-5" />
+                    Launch Practice
                   </button>
                 </div>
-              </motion.div>
+              ) : (
+                <div className="flex flex-col items-center gap-6 px-10 text-center">
+                  <div className="w-20 h-20 rounded-full bg-rose-500/20 flex items-center justify-center">
+                    <AlertCircle className="w-10 h-10 text-rose-400" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-black text-white uppercase">Forge Error</p>
+                    <p className="text-[10px] text-rose-400/60 font-medium">{error}</p>
+                  </div>
+                  <button onClick={() => setStage('idle')} className="text-[10px] font-black uppercase text-white/40 hover:text-white underline underline-offset-4">Retry Forge</button>
+                </div>
+              )}
+            </div>
+
+            {/* ACTION BUTTON */}
+            {stage === 'idle' && file && (
+              <button 
+                onClick={handleGenerate}
+                className="w-full py-6 rounded-[24px] bg-purple-600 text-white font-black text-lg flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-purple-900/40"
+              >
+                <Sparkles className="w-6 h-6" />
+                Forge with AI Art Director
+                <ChevronRight className="w-5 h-5 opacity-40 ml-2" />
+              </button>
             )}
-          </AnimatePresence>
 
-          {/* Generate Button */}
-          {(stage === 'idle' || stage === 'error') && file && (
-            <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
-              onClick={handleGenerate}
-              className="w-full py-5 rounded-2xl text-white font-black text-base flex items-center justify-center gap-3 transition-all"
-              style={{
-                background: `linear-gradient(135deg, ${selectedTemplate.color}, ${selectedTemplate.color}cc)`,
-                boxShadow: `0 8px 32px ${selectedTemplate.glow}, inset 0 1px 0 rgba(255,255,255,0.2)`,
-              }}>
-              <Sparkles className="w-5 h-5" />
-              Generate with AI Art Director
-              <ChevronRight className="w-5 h-5" />
-            </motion.button>
-          )}
-
+          </div>
         </div>
+
       </div>
+
     </div>
   );
 }

@@ -9,7 +9,7 @@ export default function NavBar() {
   const links = [
     { label: 'Home', path: '/' },
     { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Study', path: '/practice' },
+    { label: 'Forge', path: '/upload' },
     { label: 'Stats', path: '/stats' },
     { label: 'Settings', path: '/settings' },
   ];

@@ -50,7 +50,14 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-6 bg-[#0f0a1e]/50 p-3 pl-6 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row items-center gap-6 bg-[#0f0a1e]/50 p-3 pl-6 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-md">
+          <button 
+            onClick={() => router.push('/upload')}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/20 active:scale-95"
+          >
+            Forge New
+          </button>
+          <div className="h-10 w-[1px] bg-white/5 mx-1 hidden sm:block" />
           <StreakBadge streak={stats.streak} />
           <div className="h-10 w-[1px] bg-white/5 mx-1" />
           <XPBar xp={stats.xp} level={stats.level} className="w-64" />
