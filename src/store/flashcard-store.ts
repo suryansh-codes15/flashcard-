@@ -45,6 +45,7 @@ interface FlashcardStore {
     decks: Deck[];
     flashcards: Flashcard[];
     sessions: StudySession[];
+    xp: number;
 
     // Deck operations
     addDeck: (deck: Deck) => void;
@@ -70,6 +71,8 @@ interface FlashcardStore {
         masteryPercentage: number;
         streak: number;
         dueToday: number;
+        xp: number;
+        level: number;
     };
     getDueCount: (deckId?: string) => number;
 }
@@ -80,6 +83,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
             decks: [],
             flashcards: [],
             sessions: [],
+            xp: 1240, // Initial premium state
 
             addDeck: (deck) => set((state) => ({ decks: [...state.decks, deck] })),
 
@@ -134,6 +138,8 @@ export const useFlashcardStore = create<FlashcardStore>()(
                     decks: state.decks.map((d) =>
                         d.id === card.deckId ? { ...d, masteredCount: masteredCards } : d
                     ),
+                    // Award XP for easy/correct cards
+                    xp: rating === 'easy' ? state.xp + 10 : state.xp
                 }));
             },
 
@@ -197,6 +203,8 @@ export const useFlashcardStore = create<FlashcardStore>()(
                     masteryPercentage,
                     streak,
                     dueToday,
+                    xp: get().xp,
+                    level: Math.floor(get().xp / 200) + 1
                 };
             },
         }),

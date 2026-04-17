@@ -17,35 +17,23 @@ const inter = Inter({
   display: 'swap',
 });
 
-const syne = Syne({
-  subsets: ['latin'],
-  variable: '--font-syne',
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
-  title: 'FlashForge — Premium AI Flashcard Engine',
-  description: 'Transform any PDF into deeply intelligent flashcards. Powered by AI with spaced repetition and a cinematic study experience.',
-  keywords: ['flashcards', 'AI', 'study', 'spaced repetition', 'PDF', 'learning'],
-  openGraph: {
-    title: 'FlashForge — Premium AI Flashcard Engine',
-    description: 'Transform PDFs into intelligent flashcards with AI.',
-    type: 'website',
-  },
+  title: 'FlashForge — AI Master Study Engine',
+  description: 'Privacy-first, AI-powered flashcards with deep space kinematics.',
 };
+
+import ThemeBackdrop from '@/components/layout/ThemeBackdrop';
+import NavBar from '@/components/layout/NavBar';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet" />
-      </head>
-      <body className={`${jakarta.variable} ${inter.variable} ${syne.variable} font-sans antialiased text-[var(--text-primary)] relative min-h-screen bg-transparent`}>
-        <CinematicBackground />
-        <ThemeProvider>
-          <Navbar />
-          <main className="relative z-10">{children}</main>
-        </ThemeProvider>
+    <html lang="en" className="custom-scrollbar">
+      <body className={`${inter.variable} font-sans antialiased bg-[#0a0616]`}>
+        <ThemeBackdrop />
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <NavBar />
+          <main className="flex-1">{children}</main>
+        </div>
       </body>
     </html>
   );
