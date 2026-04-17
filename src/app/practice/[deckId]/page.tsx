@@ -32,7 +32,14 @@ export default function StudyPage() {
   const [idx, setIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
-  const [sessionResults, setSessionResults] = useState({ easy: 0, medium: 0, hard: 0 });
+  const [sessionResults, setSessionResults] = useState({ easy: 0, medium: 0, hard: 0, again: 0 });
+  const [sessionDetails, setSessionDetails] = useState<{ id: string; strong: string[]; weak: string[] }>({
+    id: Math.random().toString(36).substring(2, 11),
+    strong: [],
+    weak: []
+  });
+  const [aiFeedback, setAiFeedback] = useState<string>("");
+  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   const [showXP, setShowXP] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [shake, setShake] = useState(false);
@@ -104,6 +111,14 @@ export default function StudyPage() {
       [rating]: (prev[rating as keyof typeof prev] || 0) + 1
     }));
 
+    // Update session details (strong/weak concepts)
+    const concept = cards[idx].front.substring(0, 50); // Use start of card as concept identifier
+    setSessionDetails(prev => {
+        if (rating === 'easy') return { ...prev, strong: Array.from(new Set([...prev.strong, concept])) };
+        if (rating === 'again' || rating === 'hard') return { ...prev, weak: Array.from(new Set([...prev.weak, concept])) };
+        return prev;
+    });
+
     // Next Card
     if (idx < cards.length - 1) {
       setTimeout(() => {
@@ -111,7 +126,54 @@ export default function StudyPage() {
         setIsFlipped(false);
       }, 400);
     } else {
-      setTimeout(() => setSessionDone(true), 1500);
+      setTimeout(async () => {
+        setSessionDone(true);
+        setIsGeneratingFeedback(true);
+        
+        // Finalize Session with AI
+        try {
+            const totalStudied = cards.length;
+            const res = await fetch('/api/ai/session-summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deckName: deck.name,
+                    accuracy: Math.round(((sessionResults.easy + sessionResults.medium) / totalStudied) * 100),
+                    stats: { ...sessionResults, [rating]: sessionResults[rating as keyof typeof sessionResults] + 1 },
+                    weakTopics: Array.from(new Set([...sessionDetails.weak, (rating === 'again' || rating === 'hard' ? concept : '')])).filter(Boolean),
+                    strongTopics: Array.from(new Set([...sessionDetails.strong, (rating === 'easy' ? concept : '')])).filter(Boolean),
+                })
+            });
+            const data = await res.json();
+            setAiFeedback(data.feedback);
+            
+            // Persist to Store
+            addSession({
+                id: sessionDetails.id,
+                deckId,
+                deckName: deck.name,
+                startedAt: new Date().toISOString(), // In real app, track start time
+                finishedAt: new Date().toISOString(),
+                cardsStudied: totalStudied,
+                cardsCorrect: sessionResults.easy + sessionResults.medium + (rating !== 'again' && rating !== 'hard' ? 1 : 0),
+                accuracy: Math.round(((sessionResults.easy + sessionResults.medium + (rating !== 'again' && rating !== 'hard' ? 1 : 0)) / totalStudied) * 100),
+                stats: { 
+                    easy: sessionResults.easy + (rating === 'easy' ? 1 : 0),
+                    medium: sessionResults.medium + (rating === 'medium' ? 1 : 0),
+                    hard: sessionResults.hard + (rating === 'hard' ? 1 : 0),
+                    again: sessionResults.again + (rating === 'again' ? 1 : 0),
+                },
+                weakTopics: sessionDetails.weak,
+                strongTopics: sessionDetails.strong,
+                improvement: 0, // Store handles calc
+                aiNote: data.feedback
+            });
+        } catch (err) {
+            console.error('Failed to generate feedback:', err);
+        } finally {
+            setIsGeneratingFeedback(false);
+        }
+      }, 1500);
     }
   }, [idx, cards, rateCard]);
 
@@ -164,12 +226,15 @@ export default function StudyPage() {
     <SessionSummary 
       deckName={deck.name} 
       totalCards={cards.length} 
-      stats={sessionResults} 
+      stats={sessionResults}
+      aiFeedback={aiFeedback}
+      isGenerating={isGeneratingFeedback}
       onReset={() => {
         setIdx(0);
         setSessionDone(false);
         setIsFlipped(false);
-        setSessionResults({ easy: 0, medium: 0, hard: 0 });
+        setSessionResults({ easy: 0, medium: 0, hard: 0, again: 0 });
+        setAiFeedback("");
       }}
     />
   );
@@ -289,7 +354,7 @@ export default function StudyPage() {
           <div className={`mt-16 w-full max-w-2xl transition-all duration-500 flex flex-col items-center gap-8 ${isFlipped ? 'opacity-100 translate-y-0 scale-100' : 'opacity-20 translate-y-4 scale-95 pointer-events-none grayscale'}`}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
               {[
-                { label: 'Again', val: 'hard' as DifficultyLevel, color: 'rgb(239, 68, 68)', hint: '1' },
+                { label: 'Again', val: 'again' as DifficultyLevel, color: 'rgb(239, 68, 68)', hint: '1' },
                 { label: 'Hard', val: 'hard' as DifficultyLevel, color: 'rgb(245, 158, 11)', hint: '2' },
                 { label: 'Good', val: 'medium' as DifficultyLevel, color: 'rgb(16, 185, 129)', hint: '3' },
                 { label: 'Easy', val: 'easy' as DifficultyLevel, color: 'rgb(59, 130, 246)', hint: '4' },

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trophy, Sparkles } from 'lucide-react';
+import { Plus, Trophy, Sparkles, History } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import NavBar from '@/components/layout/NavBar';
 import DashboardStatsRow from '@/components/DashboardStatsRow';
@@ -56,6 +56,13 @@ export default function DashboardPage() {
             className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg shadow-purple-900/20 active:scale-95"
           >
             Forge New
+          </button>
+          <button 
+            onClick={() => router.push('/dashboard/history')}
+            className="p-3 px-5 bg-white/5 hover:bg-white/10 text-white border border-white/5 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-2 group shadow-xl active:scale-95"
+          >
+            <History className="w-4 h-4 text-purple-400 group-hover:rotate-[-45deg] transition-transform" />
+            History
           </button>
           <div className="h-10 w-[1px] bg-white/5 mx-1 hidden sm:block" />
           <StreakBadge streak={stats.streak} />

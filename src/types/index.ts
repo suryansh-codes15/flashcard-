@@ -18,7 +18,7 @@ export type CardType =
 
 export type ClassLevel = 'junior' | 'mid' | 'senior';
 
-export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'again';
 
 // Premium visual templates are now driven by the semantic 'type' field
 export type CardTemplateKey =
@@ -95,14 +95,22 @@ export interface SRSRating {
 export interface StudySession {
   id: string;
   deckId: string;
+  deckName: string;
   startedAt: string;
-  finishedAt?: string;
+  finishedAt: string;
   cardsStudied: number;
-  cardsCorrect: number; // For MCQs or 'easy' ratings
-  cardsHard: number;
+  cardsCorrect: number; 
   accuracy: number;
+  stats: {
+    easy: number;
+    medium: number;
+    hard: number;
+    again: number;
+  };
   weakTopics: string[];
-  aiNote?: string;      // AI-generated feedback summary
+  strongTopics: string[];
+  improvement: number; 
+  aiNote?: string;
 }
 
 export interface GenerationProgress {

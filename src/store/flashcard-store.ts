@@ -5,7 +5,7 @@ import { generateId } from '@/lib/utils';
 
 // SM-2 adjusted algorithm
 function calculateNextReview(card: Flashcard, rating: DifficultyLevel): Partial<Flashcard> {
-    const qualityMap: Record<DifficultyLevel, number> = { easy: 5, medium: 3, hard: 1 };
+    const qualityMap: Record<DifficultyLevel, number> = { easy: 5, medium: 3, hard: 1, again: 0 };
     const quality = qualityMap[rating];
 
     let { easeFactor, interval, lapseCount, reviewCount } = card;
@@ -151,12 +151,19 @@ export const useFlashcardStore = create<FlashcardStore>()(
             },
 
             addSession: (session) => set((state) => {
-                const totalCorrect = session.cardsCorrect;
-                const totalStudied = session.cardsStudied;
-                const accuracy = totalStudied > 0 ? Math.round((totalCorrect / totalStudied) * 100) : 0;
+                // Calculate improvement compared to last session of same deck
+                const lastSession = [...state.sessions]
+                    .reverse()
+                    .find(s => s.deckId === session.deckId);
                 
+                const improvement = lastSession 
+                    ? session.accuracy - lastSession.accuracy 
+                    : 0;
+
                 return { 
-                    sessions: [...state.sessions, { ...session, accuracy }] 
+                    sessions: [...state.sessions, { ...session, improvement }],
+                    // Award XP: 5 XP per card studied, plus bonus for accuracy
+                    xp: (state.xp || 0) + (session.cardsStudied * 5) + (session.accuracy > 80 ? 50 : 0)
                 };
             }),
 
