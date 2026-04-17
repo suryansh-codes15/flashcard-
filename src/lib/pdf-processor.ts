@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+import PDFParser from 'pdf2json';
 import type { PDFChunk } from '@/types';
 
 interface ParsedPDF {
@@ -7,59 +7,50 @@ interface ParsedPDF {
   title?: string;
 }
 
-async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
-  // pdf2json uses an event-driven API — wrap it in a Promise
-  const PDFParser = require('pdf2json');
-  return new Promise((resolve, reject) => {
-    const parser = new PDFParser(null, 1); // 1 = raw text mode
-
-    parser.on('pdfParser_dataReady', (pdfData: Record<string, unknown>) => {
-      try {
-        // pdfData.Pages is defined when parsed in raw mode
-        const pages = (pdfData as { Pages?: Array<{ Texts: Array<{ R: Array<{ T: string }> }> }> }).Pages ?? [];
-        const textParts: string[] = [];
-
-        for (const page of pages) {
-          for (const textItem of page.Texts ?? []) {
-            for (const run of textItem.R ?? []) {
-              try {
-                textParts.push(decodeURIComponent(run.T));
-              } catch {
-                textParts.push(unescape(run.T));
-              }
-            }
-          }
-          textParts.push('\n'); // paragraph break between pages
-        }
-
-        resolve({
-          text: textParts.join(' '),
-          pageCount: pages.length,
-          title: (pdfData as { Meta?: { Title: string } }).Meta?.Title || undefined,
-        });
-      } catch (err) {
-        reject(err);
-      }
-    });
-
-    parser.on('pdfParser_dataError', (err: { parserError: Error }) => {
-      reject(err.parserError ?? new Error('PDF parse error'));
-    });
-
-    parser.parseBuffer(buffer);
-  });
-}
-
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
 function cleanText(text: string): string {
   return text
-    .replace(/\f/g, '\n')              // form feeds
-    .replace(/[ \t]+/g, ' ')           // multiple spaces/tabs
-    .replace(/\n{3,}/g, '\n\n')        // excessive newlines
+    .replace(/\f/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+/**
+ * Rollback to pdf2json (Version 4.0.2)
+ * This was the engine used when "it was working correctly".
+ */
+async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
+  return new Promise((resolve, reject) => {
+    const pdfParser = new (PDFParser as any)(null, 1);
+
+    pdfParser.on("pdfParser_dataError", (errData: any) => {
+      console.error('pdf2json error:', errData.parserError);
+      reject(new Error(errData.parserError || 'Failed to parse PDF Data'));
+    });
+
+    pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
+      // Version 4.x getRawTextContent() returns the text extracted
+      // based on the '1' flag in the constructor
+      const text = pdfParser.getRawTextContent();
+      const pageCount = pdfData.Pages ? pdfData.Pages.length : 0;
+      
+      resolve({
+        text: text || '',
+        pageCount,
+        title: pdfData.Meta?.Title || undefined
+      });
+    });
+
+    try {
+      pdfParser.parseBuffer(buffer);
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
 function detectHeading(line: string): boolean {

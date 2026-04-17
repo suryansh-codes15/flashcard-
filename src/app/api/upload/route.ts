@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('PDF upload error:', err);
-    return NextResponse.json({ error: 'Failed to process PDF. Please try again.' }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Failed to process PDF. Please try again.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
