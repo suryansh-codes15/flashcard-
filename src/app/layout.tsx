@@ -1,15 +1,8 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Inter, Syne } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
-import { Navbar } from '@/components/layout/Navbar';
-import { ThemeProvider } from '@/components/layout/ThemeProvider';
-import { CinematicBackground } from '@/components/layout/CinematicBackground';
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-jakarta',
-  display: 'swap',
-});
+import ThemeBackdrop from '@/components/layout/ThemeBackdrop';
+import NavBar from '@/components/layout/NavBar';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,9 +14,6 @@ export const metadata: Metadata = {
   title: 'FlashForge — AI Master Study Engine',
   description: 'Privacy-first, AI-powered flashcards with deep space kinematics.',
 };
-
-import ThemeBackdrop from '@/components/layout/ThemeBackdrop';
-import NavBar from '@/components/layout/NavBar';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
