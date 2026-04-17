@@ -1,66 +1,137 @@
 'use client';
 
-export type MascotSubject = 'math' | 'science' | 'geography' | 'history' | 'language';
+import { MascotSubject } from '@/types';
+
+export type MascotState = 'idle' | 'reading' | 'dancing' | 'jumping' | 'sad';
 
 interface Props {
+  side: 'left' | 'right';
+  name: string;
   subject: MascotSubject;
+  state: MascotState;
+  onClick?: () => void;
   className?: string;
 }
 
-export default function MascotCharacter({ subject, className = "" }: Props) {
-  const configs = {
-    math: { color: "#059669", accent: "#fbbf24", name: "Nova 🧪" },      // Green + Amber
-    science: { color: "#7c3aed", accent: "#fbbf24", name: "Sparky ⚡" },    // Purple + Amber
-    geography: { color: "#2563eb", accent: "#f3f4f6", name: "Atlas 🌍" }, // Blue + White
-    history: { color: "#db2777", accent: "#fbbf24", name: "Lexie 📝" },    // Pink + Amber
-    language: { color: "#7c3aed", accent: "#f3f4f6", name: "Lingu 💬" },  // Default fallback
+export default function MascotCharacter({ side, name, subject, state, onClick, className = "" }: Props) {
+  // Color Map per User Request
+  const colors = {
+    science:   { body: '#7c3aed', face: '#fbbf24', secondary: '#fb7185' },
+    math:      { body: '#059669', face: '#fbbf24', secondary: '#fb7185' },
+    geography: { body: '#2563eb', face: '#f3f4f6', secondary: '#94a3b8' },
+    history:   { body: '#d97706', face: '#fbbf24', secondary: '#92400e' },
+    language:  { body: '#db2777', face: '#f3f4f6', secondary: '#be185d' },
   };
 
-  const { color, accent } = configs[subject] || configs.science;
+  const { body, face } = colors[subject] || colors.science;
+  
+  // Dynamic Animation Class mapping
+  const animationClass = {
+    idle: side === 'left' ? 'animate-[charRead_3s_ease-in-out_infinite]' : 'animate-[charIdle_2.5s_ease-in-out_infinite]',
+    reading: 'animate-[charRead_3s_ease-in-out_infinite]',
+    dancing: 'animate-[charIdle_2s_ease-in-out_infinite]',
+    jumping: 'animate-[charJump_0.7s_ease-out]',
+    sad: side === 'left' ? 'rotate-[15deg] translate-y-2' : 'translate-x-[var(--dx)] animate-[shake_0.3s_linear_infinite]',
+  }[state];
 
   return (
-    <div className={`relative flex flex-col items-center group ${className}`}>
-      <svg viewBox="0 0 100 120" className="w-full h-full animate-mascot drop-shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-        {/* Shadow */}
-        <ellipse cx="50" cy="110" rx="25" ry="5" fill="rgba(0,0,0,0.2)" />
-        
-        {/* Body (Matching colored blob) */}
-        <path 
-          d="M 20 80 Q 50 100 80 80 L 80 50 Q 50 40 20 50 Z" 
-          fill={color} 
-        />
-        
-        {/* Head (Chibi Round) */}
-        <circle cx="50" cy="45" r="35" fill={accent} />
-        
-        {/* Eyes (Large with white glint) */}
-        <g>
-          <circle cx="38" cy="42" r="7" fill="white" />
-          <circle cx="38" cy="42" r="4" fill="#111" />
-          <circle cx="40" cy="40" r="1.5" fill="white" />
-          
-          <circle cx="62" cy="42" r="7" fill="white" />
-          <circle cx="62" cy="42" r="4" fill="#111" />
-          <circle cx="64" cy="40" r="1.5" fill="white" />
-        </g>
-        
-        {/* Wide Smile Arc */}
-        <path 
-          d="M 38 60 Q 50 70 62 60" 
-          fill="none" 
-          stroke="rgba(0,0,0,0.3)" 
-          strokeWidth="3" 
-          strokeLinecap="round" 
-        />
+    <div 
+      onClick={onClick}
+      className={`relative w-[88px] h-[110px] cursor-pointer transition-all duration-300 ${animationClass} ${className}`}
+      style={{ filter: `drop-shadow(0 0 12px ${body}44)` }}
+    >
+      <svg viewBox="0 0 88 110" className="w-full h-full">
+        {/* Ground Shadow */}
+        <ellipse cx="44" cy="106" rx="30" ry="4" fill="rgba(0,0,0,0.4)" />
 
-        {/* Level Indicator Wings/Ears */}
-        {subject === 'science' && (
-          <path d="M 15 25 L 10 10 L 30 15 Z M 85 25 L 90 10 L 70 15 Z" fill={color} />
-        )}
-        {subject === 'math' && (
-          <path d="M 20 20 Q 15 10 30 15 M 80 20 Q 85 10 70 15" stroke={color} strokeWidth="4" fill="none" />
-        )}
+        {/* Character Group */}
+        <g>
+          {/* Legs */}
+          <rect x="28" y="85" width="8" height="15" rx="4" fill={body} />
+          <rect x="52" y="85" width="8" height="15" rx="4" fill={body} />
+
+          {/* Body */}
+          <rect x="20" y="45" width="48" height="45" rx="12" fill={body} />
+
+          {/* Head */}
+          <circle cx="44" cy="38" r="28" fill={face} />
+
+          {/* Eyes Group with Blinking */}
+          <g className={`origin-center animate-[eyeBlink_4s_ease-in-out_infinite] ${side === 'right' ? 'animation-delay-[500ms]' : ''}`}>
+            <ellipse cx="34" cy="35" rx="4" ry="6" fill="#1e293b" />
+            <circle cx="35" cy="33" r="1.5" fill="white" />
+            
+            <ellipse cx="54" cy="35" rx="4" ry="6" fill="#1e293b" />
+            <circle cx="55" cy="33" r="1.5" fill="white" />
+          </g>
+
+          {/* Mouth / Smile */}
+          <path 
+            d={state === 'sad' ? "M 36 50 Q 44 45 52 50" : "M 34 48 Q 44 58 54 48"} 
+            fill="none" 
+            stroke="#1e293b" 
+            strokeWidth="2.5" 
+            strokeLinecap="round" 
+          />
+
+          {/* Cheek Blush */}
+          <circle cx="24" cy="45" r="4" fill="#fb7185" opacity="0.4" />
+          <circle cx="64" cy="45" r="4" fill="#fb7185" opacity="0.4" />
+
+          {/* ARMS / PROPS */}
+          {side === 'left' ? (
+            /* Sparky's Book */
+            <g transform="translate(14, 55) rotate(-10)">
+              <rect x="0" y="0" width="12" height="6" rx="2" fill={body} />
+              <g transform="translate(30, 0) rotate(20)">
+                 <rect x="0" y="0" width="12" height="6" rx="2" fill={body} />
+              </g>
+              {/* The Book */}
+              <g transform="translate(10, -5)">
+                <rect x="0" y="0" width="28" height="18" rx="2" fill="white" stroke={body} strokeWidth="1" />
+                <line x1="14" y1="2" x2="14" y2="16" stroke={body} strokeWidth="1" />
+                <line x1="4" y1="6" x2="10" y2="6" stroke="#94a3b8" strokeWidth="1" />
+                <line x1="4" y1="10" x2="10" y2="10" stroke="#94a3b8" strokeWidth="1" />
+                <line x1="18" y1="6" x2="24" y2="6" stroke="#94a3b8" strokeWidth="1" />
+                <line x1="18" y1="10" x2="24" y2="10" stroke="#94a3b8" strokeWidth="1" />
+              </g>
+            </g>
+          ) : (
+            /* Nova's Pom-poms */
+            <g>
+              <g transform="translate(10, 65) rotate(-20)">
+                <rect x="0" y="0" width="8" height="6" rx="2" fill={body} />
+                <circle cx="0" cy="0" r="4" fill="#10b981" />
+                <circle cx="4" cy="-3" r="4" fill="#f472b6" />
+                <circle cx="-4" cy="-3" r="4" fill="#10b981" />
+              </g>
+              <g transform="translate(70, 65) rotate(20)">
+                <rect x="0" y="0" width="8" height="6" rx="2" fill={body} />
+                <circle cx="8" cy="0" r="4" fill="#f472b6" />
+                <circle cx="4" cy="-3" r="4" fill="#10b981" />
+                <circle cx="12" cy="-3" r="4" fill="#f472b6" />
+              </g>
+            </g>
+          )}
+
+          {/* Details (Crown / Ears) */}
+          {side === 'left' ? (
+             /* Crown / Star */
+             <path d="M 44 2 L 47 10 L 55 10 L 49 16 L 51 24 L 44 19 L 37 24 L 39 16 L 33 10 L 41 10 Z" fill="#fbbf24" stroke="#d97706" strokeWidth="1" />
+          ) : (
+            /* Cat Ears */
+            <g>
+              <path d="M 22 18 L 12 5 L 32 15 Z" fill={body} />
+              <path d="M 66 18 L 76 5 L 56 15 Z" fill={body} />
+            </g>
+          )}
+        </g>
       </svg>
+      
+      {/* Subject Name Label (Optional, for better UX) */}
+      <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-black text-white/30 uppercase tracking-[0.2em] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+        {name}
+      </span>
     </div>
   );
 }

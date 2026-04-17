@@ -185,7 +185,13 @@ export default function UploadPage() {
                 >
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all
                     ${template === mode.id ? 'bg-white/10 scale-110' : 'bg-white/5'}`}>
-                    <MascotCharacter subject={mode.mascot} className="w-8 h-8" />
+                    <MascotCharacter 
+                      subject={mode.mascot} 
+                      side="left"
+                      name={mode.label}
+                      state="idle"
+                      className="w-8 h-8" 
+                    />
                   </div>
                   <div className="flex-1">
                     <div className={`font-black uppercase tracking-widest text-[11px] mb-1 ${mode.color}`}>
@@ -248,7 +254,7 @@ export default function UploadPage() {
               onClick={() => inputRef.current?.click()}
               className={`relative h-[400px] rounded-[40px] border-2 border-dashed flex flex-col items-center justify-center gap-6 cursor-pointer transition-all overflow-hidden
                 ${isDragging ? 'border-purple-500 bg-purple-500/10 scale-[1.02]' : 'border-white/10 bg-white/[0.02] hover:border-purple-500/30'}
-                ${stage !== 'idle' ? 'pointer-events-none' : ''}
+                ${(stage === 'uploading' || stage === 'generating') ? 'pointer-events-none' : ''}
               `}
             >
               <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
@@ -305,7 +311,9 @@ export default function UploadPage() {
                     </p>
                   </div>
                   <button 
-                    onClick={() => router.push(`/practice/${newDeckId}`)}
+                    onClick={() => {
+                      if (newDeckId) router.push(`/practice/${newDeckId}`);
+                    }}
                     className="mt-4 px-8 py-4 rounded-2xl bg-emerald-600 text-white font-black flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-emerald-900/20"
                   >
                     <Rocket className="w-5 h-5" />

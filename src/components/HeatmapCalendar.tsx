@@ -1,8 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 export default function HeatmapCalendar() {
-  // Mock data for demo: last 90 days
-  const days = Array.from({ length: 91 }).map(() => Math.floor(Math.random() * 4));
+  const [days, setDays] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Generate mock data only on client mount
+    const mockData = Array.from({ length: 91 }).map(() => Math.floor(Math.random() * 4));
+    setDays(mockData);
+  }, []);
 
   const getColor = (level: number) => {
     switch (level) {
@@ -13,6 +20,18 @@ export default function HeatmapCalendar() {
       default: return 'bg-[#1a1040]/30';
     }
   };
+
+  if (days.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-[3px]">
+          {Array.from({ length: 91 }).map((_, i) => (
+            <div key={i} className="w-[12px] h-[12px] rounded-sm bg-[#1a1040]/30 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

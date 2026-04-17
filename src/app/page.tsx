@@ -1,10 +1,24 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Sparkles, Brain, Shield, Zap } from 'lucide-react';
 import MascotCharacter from '@/components/MascotCharacter';
 
 export default function LandingPage() {
+  const [sparkles, setSparkles] = useState<{ width: string; height: string; top: string; left: string; delay: number }[]>([]);
+
+  useEffect(() => {
+    const newSparkles = [...Array(6)].map(() => ({
+      width: `${2 + Math.random() * 4}px`,
+      height: `${2 + Math.random() * 4}px`,
+      top: `${Math.random() * 80}%`,
+      left: `${Math.random() * 100}%`,
+      delay: 2 + Math.random() * 2
+    }));
+    setSparkles(newSparkles);
+  }, []);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] overflow-hidden">
       
@@ -24,16 +38,16 @@ export default function LandingPage() {
         </div>
 
         {/* Global Sparkle Dots */}
-        {[...Array(6)].map((_, i) => (
+        {sparkles.map((s, i) => (
           <div 
             key={i}
             className="absolute rounded-full bg-white opacity-20 pointer-events-none"
             style={{ 
-              width: `${2 + Math.random() * 4}px`, 
-              height: `${2 + Math.random() * 4}px`,
-              top: `${Math.random() * 80}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `sparkle ${2 + Math.random() * 2}s infinite`
+              width: s.width, 
+              height: s.height,
+              top: s.top,
+              left: s.left,
+              animation: `sparkle ${s.delay}s infinite`
             }}
           />
         ))}
@@ -81,7 +95,13 @@ export default function LandingPage() {
             { subject: 'history' as const, name: 'Lexie 📝', color: 'text-pink-400' },
           ].map((m) => (
             <div key={m.subject} className="flex flex-col items-center gap-4 group cursor-help">
-              <MascotCharacter subject={m.subject} className="w-24 h-24 filter drop-shadow-2xl group-hover:scale-110 transition-transform" />
+              <MascotCharacter 
+                subject={m.subject} 
+                side="left"
+                name={m.name}
+                state="idle"
+                className="w-24 h-24 filter drop-shadow-2xl group-hover:scale-110 transition-transform" 
+              />
               <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${m.color} opacity-60 group-hover:opacity-100 transition-opacity`}>
                 {m.name}
               </span>

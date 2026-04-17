@@ -25,15 +25,27 @@ export default function SampleLibrary({ onSelect }: SampleLibraryProps) {
 
   useEffect(() => {
     async function fetchSamples() {
+      // Check for credentials presence in environments
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.warn('Supabase credentials missing. Library hidden.');
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('sample_library')
           .select('*');
 
-        if (error) throw error;
+        if (error) {
+          console.warn('Supabase fetch error:', error.message);
+          setLoading(false);
+          return;
+        }
         setSamples(data || []);
       } catch (err) {
-        console.error('Failed to fetch library:', err);
+        // Use warn to prevent dev overlay blocking the UI
+        console.warn('Silent failure in library fetch:', err);
       } finally {
         setLoading(false);
       }
@@ -72,7 +84,13 @@ export default function SampleLibrary({ onSelect }: SampleLibraryProps) {
           >
             {/* Mascot Icon */}
             <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <MascotCharacter subject={sample.subject_mascot as any} className="w-8 h-8" />
+              <MascotCharacter 
+                subject={sample.subject_mascot as any} 
+                side="left"
+                name={sample.name}
+                state="idle"
+                className="w-8 h-8" 
+              />
             </div>
 
             <div className="flex-1 space-y-1">

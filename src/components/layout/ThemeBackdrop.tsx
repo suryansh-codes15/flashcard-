@@ -1,6 +1,21 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 export default function ThemeBackdrop() {
+  const [sparkles, setSparkles] = useState<{ top: string; left: string; size: number; delay: string; duration: string }[]>([]);
+
+  useEffect(() => {
+    const newSparkles = [...Array(8)].map(() => ({
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      size: 1,
+      delay: `${Math.random() * 5}s`,
+      duration: `${2 + Math.random() * 3}s`
+    }));
+    setSparkles(newSparkles);
+  }, []);
+
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#0a0616]">
       {/* Drifting Orbs */}
@@ -24,16 +39,16 @@ export default function ThemeBackdrop() {
       />
 
       {/* Sparkle Particles */}
-      {[...Array(8)].map((_, i) => (
+      {sparkles.map((s, i) => (
         <div 
           key={i}
           className="absolute w-1 h-1 bg-white rounded-full"
           style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
+            top: s.top,
+            left: s.left,
             opacity: 0.4,
-            animation: `sparkle ${2 + Math.random() * 3}s ease-in-out infinite`,
-            animationDelay: `${Math.random() * 5}s`
+            animation: `sparkle ${s.duration} ease-in-out infinite`,
+            animationDelay: s.delay
           }}
         />
       ))}

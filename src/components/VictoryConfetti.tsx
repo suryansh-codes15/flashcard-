@@ -13,6 +13,7 @@ export default function VictoryConfetti() {
       color: ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'][Math.floor(Math.random() * 6)],
       size: 8 + Math.random() * 8,
       delay: Math.random() * 0.5,
+      radius: Math.random() > 0.5 ? '50%' : '2px',
     }));
     setPieces(newPieces);
     
@@ -32,7 +33,7 @@ export default function VictoryConfetti() {
             width: p.size,
             height: p.size,
             backgroundColor: p.color,
-            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+            borderRadius: p.radius,
             '--tw-translate-x': `${p.x}px`,
             '--tw-translate-y': `${p.y}px`,
             animation: `confettiFly 2s ease-out forwards`,

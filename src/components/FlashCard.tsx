@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import MascotCharacter, { MascotSubject } from './MascotCharacter';
+import MascotCharacter from './MascotCharacter';
+import { MascotSubject } from '@/types';
 
 interface Props {
   subject: MascotSubject;
@@ -33,7 +34,13 @@ export default function FlashCard({ subject, question, answer, isFlipped, onFlip
           </div>
 
           <div className="flex justify-end pr-2">
-            <MascotCharacter subject={subject} className="w-16 h-16 opacity-80" />
+            <MascotCharacter 
+              subject={subject} 
+              side="left"
+              name="Assistant"
+              state="idle"
+              className="w-16 h-16 opacity-80" 
+            />
           </div>
         </div>
 
