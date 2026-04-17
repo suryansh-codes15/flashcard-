@@ -50,7 +50,12 @@ export default function UploadPage() {
     try {
       setStage('uploading');
       setStatusMsg('Downloading library sample...');
-      const response = await fetch(url);
+      const response = await fetch(`/api/proxy-download?url=${encodeURIComponent(url)}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download from proxy');
+      }
+      
       const blob = await response.blob();
       const libraryFile = new File([blob], `${name}.pdf`, { type: 'application/pdf' });
       setFile(libraryFile);
