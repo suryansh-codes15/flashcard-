@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Sparkles, Brain, Shield, Zap } from 'lucide-react';
 import MascotCharacter from '@/components/MascotCharacter';
 
+
 export default function LandingPage() {
   const [sparkles, setSparkles] = useState<{ width: string; height: string; top: string; left: string; delay: number }[]>([]);
 
@@ -82,6 +83,7 @@ export default function LandingPage() {
               </button>
             </Link>
           </div>
+
         </div>
       </section>
 

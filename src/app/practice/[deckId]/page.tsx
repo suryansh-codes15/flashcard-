@@ -9,8 +9,7 @@ import MascotCharacter, { MascotState } from '@/components/MascotCharacter';
 import CinematicBackground from '@/components/layout/CinematicBackground';
 import XPBar from '@/components/XPBar';
 import StreakBadge from '@/components/StreakBadge';
-import XPFloatingScore from '@/components/XPFloatingScore';
-import VictoryConfetti from '@/components/VictoryConfetti';
+import { useXP, XPPopup } from '@/components/XPSystem';
 import SessionSummary from '@/components/practice/SessionSummary';
 import { DifficultyLevel, Flashcard, MascotSubject } from '@/types';
 
@@ -18,7 +17,7 @@ export default function StudyPage() {
   const params = useParams();
   const router = useRouter();
   const deckId = params.deckId as string;
-  const { getDeck, getCardsForReview, getDeckCards, rateCard, getStats } = useFlashcardStore();
+  const { getDeck, getCardsForReview, getDeckCards, rateCard, getStats, addSession } = useFlashcardStore();
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -40,8 +39,7 @@ export default function StudyPage() {
   });
   const [aiFeedback, setAiFeedback] = useState<string>("");
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
-  const [showXP, setShowXP] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const { xp: sessionXp, gainXP, popup: xpPopup } = useXP();
   const [shake, setShake] = useState(false);
 
   // Character States
@@ -78,15 +76,11 @@ export default function StudyPage() {
     
     // Feedback Logic
     if (rating === 'easy' || rating === 'medium') {
-      setShowXP(true);
+      gainXP(rating === 'easy' ? 15 : 10);
       setLeftMascotState('jumping');
       setRightMascotState('jumping');
       
-      if (rating === 'easy') setShowConfetti(true);
-      
       setTimeout(() => {
-        setShowXP(false);
-        setShowConfetti(false);
         setLeftMascotState('reading');
         setRightMascotState('idle');
       }, 1500);
@@ -137,7 +131,7 @@ export default function StudyPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    deckName: deck.name,
+                    deckName: deck?.name || 'Unknown Deck',
                     accuracy: Math.round(((sessionResults.easy + sessionResults.medium) / totalStudied) * 100),
                     stats: { ...sessionResults, [rating]: sessionResults[rating as keyof typeof sessionResults] + 1 },
                     weakTopics: Array.from(new Set([...sessionDetails.weak, (rating === 'again' || rating === 'hard' ? concept : '')])).filter(Boolean),
@@ -151,8 +145,8 @@ export default function StudyPage() {
             addSession({
                 id: sessionDetails.id,
                 deckId,
-                deckName: deck.name,
-                startedAt: new Date().toISOString(), // In real app, track start time
+                deckName: deck?.name || 'Unknown Deck',
+                startedAt: new Date().toISOString(), 
                 finishedAt: new Date().toISOString(),
                 cardsStudied: totalStudied,
                 cardsCorrect: sessionResults.easy + sessionResults.medium + (rating !== 'again' && rating !== 'hard' ? 1 : 0),
@@ -165,7 +159,7 @@ export default function StudyPage() {
                 },
                 weakTopics: sessionDetails.weak,
                 strongTopics: sessionDetails.strong,
-                improvement: 0, // Store handles calc
+                improvement: 0, 
                 aiNote: data.feedback
             });
         } catch (err) {
@@ -260,8 +254,7 @@ export default function StudyPage() {
       <CinematicBackground subject={subject} />
 
       {/* Visual Overlays */}
-      {showXP && <XPFloatingScore />}
-      {showConfetti && <VictoryConfetti />}
+      <XPPopup popup={xpPopup} />
 
       <div className="w-full max-w-5xl flex flex-col gap-10 z-10">
         
