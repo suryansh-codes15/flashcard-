@@ -1,160 +1,235 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Target, Zap, RotateCcw, LayoutDashboard, Brain, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { RotateCcw, LayoutDashboard, CheckCircle2, XCircle } from 'lucide-react';
+
+interface CardResult {
+  front: string;
+  rating: 'easy' | 'medium' | 'hard' | 'again';
+}
 
 interface Props {
   deckName: string;
   totalCards: number;
-  stats: {
-    easy: number;
-    medium: number;
-    hard: number;
-    again: number;
-  };
+  stats: { easy: number; medium: number; hard: number; again: number };
+  cardResults?: CardResult[];
   aiFeedback?: string;
   isGenerating?: boolean;
   onReset: () => void;
 }
 
-export default function SessionSummary({ 
-  deckName, 
-  totalCards, 
-  stats, 
-  aiFeedback, 
-  isGenerating, 
-  onReset 
-}: Props) {
-  const router = useRouter();
-  const accuracy = totalCards > 0 ? Math.round(((stats.easy + stats.medium) / totalCards) * 100) : 0;
+function getGrade(pct: number) {
+  if (pct >= 90) return { label: 'S', color: '#FFD700', shadow: 'rgba(255,215,0,.4)',  msg: "Legendary! You've completely dominated this deck! 🚀" };
+  if (pct >= 75) return { label: 'A', color: '#4ade80', shadow: 'rgba(74,222,128,.35)', msg: "Excellent work! Keep that momentum going! ⚡" };
+  if (pct >= 55) return { label: 'B', color: '#38bdf8', shadow: 'rgba(56,189,248,.35)', msg: "Solid session. A few more rounds and you'll ace it! 💪" };
+  return          { label: 'C', color: '#f87171', shadow: 'rgba(248,113,113,.35)', msg: "Rough session — but showing up is what matters. 🌱" };
+}
+
+function ScoreRing({ pct }: { pct: number }) {
+  const r = 54;
+  const circ = 2 * Math.PI * r;
+  const [dash, setDash] = useState(circ);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDash(circ - (pct / 100) * circ), 300);
+    return () => clearTimeout(t);
+  }, [pct, circ]);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      className="max-w-3xl w-full mx-auto p-[2px] bg-gradient-to-b from-purple-500/30 via-transparent to-transparent rounded-[32px] mt-12 relative"
+    <svg width="148" height="148" viewBox="0 0 148 148">
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor="#7c3aed"/>
+          <stop offset="100%" stopColor="#00FFFF"/>
+        </linearGradient>
+      </defs>
+      {/* Track */}
+      <circle cx="74" cy="74" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="13"/>
+      {/* Fill */}
+      <circle
+        cx="74" cy="74" r={r}
+        fill="none"
+        stroke="url(#ringGrad)"
+        strokeWidth="13"
+        strokeDasharray={circ}
+        strokeDashoffset={dash}
+        strokeLinecap="round"
+        style={{
+          transition: 'stroke-dashoffset 1.3s cubic-bezier(0.34,1.56,0.64,1)',
+          transform: 'rotate(-90deg)',
+          transformOrigin: 'center',
+        }}
+      />
+      <text x="74" y="70" textAnchor="middle" fill="white" fontSize="28" fontWeight="800">{pct}%</text>
+      <text x="74" y="88" textAnchor="middle" fill="#a78bfa" fontSize="11" fontWeight="700" letterSpacing="2">CORRECT</text>
+    </svg>
+  );
+}
+
+export default function SessionSummary({
+  deckName,
+  totalCards,
+  stats,
+  cardResults = [],
+  aiFeedback,
+  isGenerating,
+  onReset,
+}: Props) {
+  const router = useRouter();
+  const correct  = stats.easy + stats.medium;
+  const pct      = totalCards > 0 ? Math.round((correct / totalCards) * 100) : 0;
+  const xpEarned = correct * 10 + (pct >= 90 ? 50 : pct >= 75 ? 25 : 0);
+  const grade    = getGrade(pct);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShow(true), 80);
+    if (pct >= 75) {
+      setTimeout(() =>
+        confetti({ particleCount: 130, spread: 90, colors: ['#a78bfa','#00FFFF','#FFD700','#4ade80','#f472b6'], origin: { y: 0.45 }, gravity: 1.1 }),
+      700);
+    }
+    return () => clearTimeout(t);
+  }, [pct]);
+
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-20 text-white"
+      style={{
+        opacity:    show ? 1 : 0,
+        transform:  show ? 'translateY(0)' : 'translateY(28px)',
+        transition: 'all 0.65s ease',
+      }}
     >
-      {/* Background Glow */}
-      <div className="absolute inset-x-0 -top-24 h-48 bg-purple-600/20 blur-[100px] pointer-events-none" />
-
-      <div className="bg-[#0f0a1e]/90 border border-white/5 rounded-[30px] p-8 md:p-12 flex flex-col gap-10 shadow-2xl backdrop-blur-3xl overflow-hidden relative">
-        
-        {/* Animated Particles/Design Elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl -mr-32 -mt-32 animate-pulse" />
-        
-        {/* Header Section */}
-        <div className="text-center relative">
-          <motion.div 
-            initial={{ rotate: -10, scale: 0 }}
-            animate={{ rotate: 0, scale: 1 }}
-            transition={{ type: 'spring', damping: 12 }}
-            className="inline-flex p-6 rounded-[28px] bg-purple-600/10 border border-purple-500/20 shadow-[0_0_50px_rgba(124,58,237,0.3)] mb-6"
-          >
-            <Trophy className="w-16 h-16 text-purple-400" />
-          </motion.div>
-          <div className="space-y-2">
-            <h2 className="text-5xl font-black text-white tracking-tighter drop-shadow-2xl">
-              FORGE COMPLETE
-            </h2>
-            <p className="text-xs font-black uppercase tracking-[0.4em] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-              Neural Integration Success: {deckName}
-            </p>
-          </div>
+      {/* Header */}
+      <div className="text-center mb-8 space-y-2">
+        <div className="inline-flex px-4 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-black text-purple-400 uppercase tracking-[0.25em]">
+          Session Complete
         </div>
-
-        {/* AI COACH SECTION */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="relative group p-6 rounded-[32px] bg-gradient-to-br from-purple-600/10 to-blue-600/5 border border-white/10 overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="flex items-start gap-4 relative">
-            <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-              <Sparkles className="w-6 h-6 text-amber-400" />
-            </div>
-            <div className="flex-1 space-y-2">
-              <h3 className="text-xs font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
-                AI Learning Coach
-                {isGenerating && <Loader2 className="w-3 h-3 animate-spin text-purple-400" />}
-              </h3>
-              <div className="text-lg font-medium text-white/90 leading-relaxed min-h-[60px]">
-                {isGenerating ? (
-                  <div className="flex flex-col gap-2">
-                    <div className="h-4 w-3/4 bg-white/5 rounded animate-pulse" />
-                    <div className="h-4 w-1/2 bg-white/5 rounded animate-pulse" />
-                  </div>
-                ) : aiFeedback ? (
-                  aiFeedback
-                ) : (
-                  "Analyzing your performance patterns to generate personalized insights..."
-                )}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Primary Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-          {[
-            { label: 'Accuracy', value: `${accuracy}%`, color: 'text-emerald-400', icon: Target, delay: 0.4 },
-            { label: 'Total Cards', value: totalCards, color: 'text-purple-400', icon: Brain, delay: 0.5 },
-            { label: 'Perfect', value: stats.easy, color: 'text-amber-400', icon: Zap, delay: 0.6 },
-            { label: 'Attempts', value: stats.again, color: 'text-rose-400', icon: AlertCircle, delay: 0.7 },
-          ].map((s, i) => (
-            <motion.div 
-              key={s.label}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: s.delay }}
-              className="p-6 rounded-[28px] bg-white/[0.03] border border-white/5 hover:border-white/10 transition-colors flex flex-col items-center gap-2 group"
-            >
-              <s.icon className={`w-5 h-5 ${s.color} group-hover:scale-110 transition-transform`} />
-              <div className="text-2xl font-black text-white tabular-nums">{s.value}</div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-white/30">{s.label}</div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Detailed Breakdown */}
-        <div className="w-full space-y-4">
-          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 text-center">Consistency Spectrum</h4>
-          <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden flex p-[2px] border border-white/5 gap-[2px]">
-            <div className="h-full bg-emerald-500 rounded-l-full transition-all duration-1000" style={{ width: `${(stats.easy/totalCards)*100}%` }} />
-            <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${(stats.medium/totalCards)*100}%` }} />
-            <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${(stats.hard/totalCards)*100}%` }} />
-            <div className="h-full bg-rose-500 rounded-r-full transition-all duration-1000" style={{ width: `${(stats.again/totalCards)*100}%` }} />
-          </div>
-          <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-white/20">
-            <span>Easy ({stats.easy})</span>
-            <span>Hard ({stats.again})</span>
-          </div>
-        </div>
-
-        {/* Action Row */}
-        <div className="flex flex-col sm:flex-row gap-4 w-full relative z-10">
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onReset}
-            className="flex-1 flex items-center justify-center gap-3 py-6 rounded-2xl bg-purple-600 text-white font-black hover:bg-purple-500 transition-all shadow-xl shadow-purple-900/20"
-          >
-            <RotateCcw className="w-5 h-5 shadow-inner" />
-            Study Again
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.05)' }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/dashboard')}
-            className="flex-1 flex items-center justify-center gap-3 py-6 rounded-2xl bg-[#1a1040]/50 border border-white/10 text-white font-black transition-all"
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            Control Center
-          </motion.button>
-        </div>
+        <h1 className="text-3xl font-black tracking-tight">{deckName}</h1>
+        <p className="text-sm text-gray-500 font-medium">Here's how you did</p>
       </div>
-    </motion.div>
+
+      {/* Grade + Ring */}
+      <div className="flex items-center gap-10 mb-10">
+        {/* Grade badge */}
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl font-black"
+            style={{
+              background: `${grade.color}1a`,
+              border:     `2px solid ${grade.color}`,
+              boxShadow:  `0 0 24px ${grade.shadow}`,
+              color:      grade.color,
+            }}
+          >
+            {grade.label}
+          </div>
+          <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Grade</span>
+        </div>
+
+        <ScoreRing pct={pct} />
+      </div>
+
+      {/* Stats row */}
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+        {[
+          { icon: '🃏', label: 'Reviewed', val: totalCards },
+          { icon: '✅', label: 'Correct',  val: correct },
+          { icon: '❌', label: 'Missed',   val: totalCards - correct },
+          { icon: '⚡', label: 'XP Earned', val: `+${xpEarned}` },
+        ].map(stat => (
+          <div
+            key={stat.label}
+            className="flex flex-col items-center gap-1 px-6 py-4 rounded-2xl bg-white/[0.03] border border-white/10 min-w-[80px]"
+          >
+            <div className="text-2xl">{stat.icon}</div>
+            <div className="text-xl font-black text-white/90">{stat.val}</div>
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Motivational message */}
+      <div
+        className="px-7 py-4 rounded-2xl border max-w-md text-center mb-8 text-[15px]"
+        style={{
+          background: 'linear-gradient(135deg,rgba(124,58,237,.18),rgba(0,255,200,.07))',
+          borderColor: 'rgba(167,139,250,.25)',
+          color: '#d8b4fe',
+        }}
+      >
+        {grade.msg}
+      </div>
+
+      {/* AI Feedback */}
+      {(aiFeedback || isGenerating) && (
+        <div className="w-full max-w-lg mb-8 p-5 rounded-2xl bg-[#0f0a1e] border border-purple-500/20">
+          <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">AI Insight</p>
+          {isGenerating ? (
+            <div className="flex items-center gap-2 text-gray-500 text-sm">
+              <div className="w-3 h-3 rounded-full bg-purple-500/50 animate-pulse" />
+              Generating your personalised feedback...
+            </div>
+          ) : (
+            <p className="text-sm text-gray-300 leading-relaxed">{aiFeedback}</p>
+          )}
+        </div>
+      )}
+
+      {/* Card Breakdown */}
+      {cardResults.length > 0 && (
+        <div className="w-full max-w-lg mb-10 rounded-2xl overflow-hidden border border-white/8 bg-white/[0.02]">
+          <div className="px-4 py-3 border-b border-white/5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+            Card Breakdown
+          </div>
+          <div className="max-h-[220px] overflow-y-auto custom-scrollbar divide-y divide-white/5">
+            {cardResults.map((r, i) => {
+              const isCorrect = r.rating === 'easy' || r.rating === 'medium';
+              return (
+                <div key={i} className="flex items-center gap-3 px-4 py-3 text-sm">
+                  {isCorrect
+                    ? <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    : <XCircle     className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                  }
+                  <span className="flex-1 text-gray-300 truncate">{r.front}</span>
+                  <span
+                    className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full"
+                    style={{
+                      background: isCorrect ? 'rgba(74,222,128,.12)' : 'rgba(248,113,113,.12)',
+                      color:      isCorrect ? '#4ade80'              : '#f87171',
+                      border:     `1px solid ${isCorrect ? 'rgba(74,222,128,.25)' : 'rgba(248,113,113,.25)'}`,
+                    }}
+                  >
+                    {r.rating === 'easy' ? 'Easy' : r.rating === 'medium' ? 'Good' : r.rating === 'hard' ? 'Hard' : 'Again'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* CTA Buttons */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onReset}
+          className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-900/30"
+          style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}
+        >
+          <RotateCcw className="w-4 h-4" />
+          Study Again
+        </button>
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-purple-300 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 transition-all active:scale-95"
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          Back to Decks
+        </button>
+      </div>
+    </div>
   );
 }

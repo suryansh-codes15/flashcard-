@@ -11,178 +11,157 @@ import XPBar from '@/components/XPBar';
 import StreakBadge from '@/components/StreakBadge';
 import { useXP, XPPopup } from '@/components/XPSystem';
 import SessionSummary from '@/components/practice/SessionSummary';
+import CardNavigation from '@/components/practice/CardNavigation';
+import CardIllustration from '@/components/practice/CardIllustration';
 import { DifficultyLevel, Flashcard, MascotSubject } from '@/types';
 
+interface CardResult {
+  front: string;
+  rating: DifficultyLevel;
+}
+
 export default function StudyPage() {
-  const params = useParams();
-  const router = useRouter();
-  const deckId = params.deckId as string;
+  const params  = useParams();
+  const router  = useRouter();
+  const deckId  = params.deckId as string;
   const { getDeck, getCardsForReview, getDeckCards, rateCard, getStats, addSession } = useFlashcardStore();
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  useEffect(() => { setHydrated(true); }, []);
 
-  const deck = hydrated ? getDeck(deckId) : null;
+  const deck  = hydrated ? getDeck(deckId) : null;
   const stats = hydrated ? getStats() : null;
-  
-  const [cards, setCards] = useState<Flashcard[]>([]);
-  const [idx, setIdx] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [sessionDone, setSessionDone] = useState(false);
+
+  const [cards, setCards]               = useState<Flashcard[]>([]);
+  const [idx, setIdx]                   = useState(0);
+  const [isFlipped, setIsFlipped]       = useState(false);
+  const [sessionDone, setSessionDone]   = useState(false);
+  const [cardResults, setCardResults]   = useState<CardResult[]>([]);
   const [sessionResults, setSessionResults] = useState({ easy: 0, medium: 0, hard: 0, again: 0 });
   const [sessionDetails, setSessionDetails] = useState<{ id: string; strong: string[]; weak: string[] }>({
     id: Math.random().toString(36).substring(2, 11),
     strong: [],
-    weak: []
+    weak: [],
   });
-  const [aiFeedback, setAiFeedback] = useState<string>("");
+  const [aiFeedback, setAiFeedback]           = useState('');
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   const { xp: sessionXp, gainXP, popup: xpPopup } = useXP();
   const [shake, setShake] = useState(false);
 
   // Character States
-  const [leftMascotState, setLeftMascotState] = useState<MascotState>('reading');
+  const [leftMascotState, setLeftMascotState]   = useState<MascotState>('reading');
   const [rightMascotState, setRightMascotState] = useState<MascotState>('idle');
+
+  // Track which cards have already been rated (to skip SM-2 re-trigger on nav)
+  const [ratedCardIds, setRatedCardIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!hydrated) return;
-
-    console.log('StudyPage mounted. deckId:', deckId);
-    console.log('Deck found:', !!deck);
-
     let reviewCards = getCardsForReview(deckId);
-    console.log('Review cards count:', reviewCards.length);
-
-    if (reviewCards.length === 0) {
-      reviewCards = getDeckCards(deckId);
-      console.log('Total deck cards count:', reviewCards.length);
-    }
-
+    if (reviewCards.length === 0) reviewCards = getDeckCards(deckId);
     if (reviewCards.length > 0) {
       setCards(reviewCards);
     } else if (deck) {
-      console.warn('No cards found for this deck. Moving to session summary.');
       setSessionDone(true);
     }
   }, [deckId, getCardsForReview, getDeckCards, deck, hydrated]);
 
   const handleRate = useCallback((rating: DifficultyLevel) => {
-    if (!cards[idx]) {
-      console.error('Cannot rate: current card is missing. idx:', idx);
-      return;
-    }
-    
-    // Feedback Logic
+    if (!cards[idx]) return;
+
+    // XP + mascot feedback
     if (rating === 'easy' || rating === 'medium') {
       gainXP(rating === 'easy' ? 15 : 10);
       setLeftMascotState('jumping');
       setRightMascotState('jumping');
-      
-      setTimeout(() => {
-        setLeftMascotState('reading');
-        setRightMascotState('idle');
-      }, 1500);
+      setTimeout(() => { setLeftMascotState('reading'); setRightMascotState('idle'); }, 1500);
     } else {
       setShake(true);
       setLeftMascotState('sad');
       setRightMascotState('sad');
-      
-      setTimeout(() => {
-        setShake(false);
-        setLeftMascotState('reading');
-        setRightMascotState('idle');
-      }, 800);
+      setTimeout(() => { setShake(false); setLeftMascotState('reading'); setRightMascotState('idle'); }, 800);
     }
 
-    // Process SRS
-    rateCard(cards[idx].id, rating);
+    // Only apply SM-2 if this card hasn't been rated yet
+    if (!ratedCardIds.has(cards[idx].id)) {
+      rateCard(cards[idx].id, rating);
+      setRatedCardIds(prev => new Set([...prev, cards[idx].id]));
 
-    // Update session stats
-    setSessionResults(prev => ({
-      ...prev,
-      [rating]: (prev[rating as keyof typeof prev] || 0) + 1
-    }));
+      // Update session stats
+      setSessionResults(prev => ({ ...prev, [rating]: (prev[rating as keyof typeof prev] || 0) + 1 }));
+      setCardResults(prev => [...prev, { front: cards[idx].front, rating }]);
 
-    // Update session details (strong/weak concepts)
-    const concept = cards[idx].front.substring(0, 50); // Use start of card as concept identifier
-    setSessionDetails(prev => {
-        if (rating === 'easy') return { ...prev, strong: Array.from(new Set([...prev.strong, concept])) };
+      const concept = cards[idx].front.substring(0, 50);
+      setSessionDetails(prev => {
+        if (rating === 'easy')   return { ...prev, strong: Array.from(new Set([...prev.strong, concept])) };
         if (rating === 'again' || rating === 'hard') return { ...prev, weak: Array.from(new Set([...prev.weak, concept])) };
         return prev;
-    });
+      });
+    }
 
-    // Next Card
+    // Advance or finish
     if (idx < cards.length - 1) {
-      setTimeout(() => {
-        setIdx(idx + 1);
-        setIsFlipped(false);
-      }, 400);
+      setTimeout(() => { setIdx(idx + 1); setIsFlipped(false); }, 400);
     } else {
       setTimeout(async () => {
         setSessionDone(true);
         setIsGeneratingFeedback(true);
-        
-        // Finalize Session with AI
         try {
-            const totalStudied = cards.length;
-            const res = await fetch('/api/ai/session-summary', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    deckName: deck?.name || 'Unknown Deck',
-                    accuracy: Math.round(((sessionResults.easy + sessionResults.medium) / totalStudied) * 100),
-                    stats: { ...sessionResults, [rating]: sessionResults[rating as keyof typeof sessionResults] + 1 },
-                    weakTopics: Array.from(new Set([...sessionDetails.weak, (rating === 'again' || rating === 'hard' ? concept : '')])).filter(Boolean),
-                    strongTopics: Array.from(new Set([...sessionDetails.strong, (rating === 'easy' ? concept : '')])).filter(Boolean),
-                })
-            });
-            const data = await res.json();
-            setAiFeedback(data.feedback);
-            
-            // Persist to Store
-            addSession({
-                id: sessionDetails.id,
-                deckId,
-                deckName: deck?.name || 'Unknown Deck',
-                startedAt: new Date().toISOString(), 
-                finishedAt: new Date().toISOString(),
-                cardsStudied: totalStudied,
-                cardsCorrect: sessionResults.easy + sessionResults.medium + (rating !== 'again' && rating !== 'hard' ? 1 : 0),
-                accuracy: Math.round(((sessionResults.easy + sessionResults.medium + (rating !== 'again' && rating !== 'hard' ? 1 : 0)) / totalStudied) * 100),
-                stats: { 
-                    easy: sessionResults.easy + (rating === 'easy' ? 1 : 0),
-                    medium: sessionResults.medium + (rating === 'medium' ? 1 : 0),
-                    hard: sessionResults.hard + (rating === 'hard' ? 1 : 0),
-                    again: sessionResults.again + (rating === 'again' ? 1 : 0),
-                },
-                weakTopics: sessionDetails.weak,
-                strongTopics: sessionDetails.strong,
-                improvement: 0, 
-                aiNote: data.feedback
-            });
+          const totalStudied = cards.length;
+          const res = await fetch('/api/ai/session-summary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              deckName:    deck?.name || 'Unknown Deck',
+              accuracy:    Math.round(((sessionResults.easy + sessionResults.medium) / totalStudied) * 100),
+              stats:       { ...sessionResults, [rating]: sessionResults[rating as keyof typeof sessionResults] + 1 },
+              weakTopics:  Array.from(new Set([...sessionDetails.weak,   (rating === 'again' || rating === 'hard' ? cards[idx].front.substring(0,50) : '')])).filter(Boolean),
+              strongTopics: Array.from(new Set([...sessionDetails.strong, (rating === 'easy' ? cards[idx].front.substring(0,50) : '')])).filter(Boolean),
+            }),
+          });
+          const data = await res.json();
+          setAiFeedback(data.feedback);
+
+          addSession({
+            id:           sessionDetails.id,
+            deckId,
+            deckName:     deck?.name || 'Unknown Deck',
+            startedAt:    new Date().toISOString(),
+            finishedAt:   new Date().toISOString(),
+            cardsStudied: totalStudied,
+            cardsCorrect: sessionResults.easy + sessionResults.medium + (rating !== 'again' && rating !== 'hard' ? 1 : 0),
+            accuracy:     Math.round(((sessionResults.easy + sessionResults.medium + (rating !== 'again' && rating !== 'hard' ? 1 : 0)) / totalStudied) * 100),
+            stats: {
+              easy:   sessionResults.easy   + (rating === 'easy'   ? 1 : 0),
+              medium: sessionResults.medium + (rating === 'medium' ? 1 : 0),
+              hard:   sessionResults.hard   + (rating === 'hard'   ? 1 : 0),
+              again:  sessionResults.again  + (rating === 'again'  ? 1 : 0),
+            },
+            weakTopics:   sessionDetails.weak,
+            strongTopics: sessionDetails.strong,
+            improvement:  0,
+            aiNote:       data.feedback,
+          });
         } catch (err) {
-            console.error('Failed to generate feedback:', err);
+          console.error('Failed to generate feedback:', err);
         } finally {
-            setIsGeneratingFeedback(false);
+          setIsGeneratingFeedback(false);
         }
       }, 1500);
     }
-  }, [idx, cards, rateCard]);
+  }, [idx, cards, rateCard, ratedCardIds, deck, deckId, addSession, gainXP, sessionResults, sessionDetails]);
 
-  // Handle Keyboard Interactions
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
         setIsFlipped(prev => !prev);
-        // Micro character bounce on flip
         setRightMascotState('dancing');
         setTimeout(() => setRightMascotState('idle'), 400);
       }
       if (isFlipped) {
-        if (e.key === '1') handleRate('hard');
+        if (e.key === '1') handleRate('again');
         if (e.key === '2') handleRate('hard');
         if (e.key === '3') handleRate('medium');
         if (e.key === '4') handleRate('easy');
@@ -204,7 +183,7 @@ export default function StudyPage() {
             {!hydrated ? 'Accessing Neural Storage...' : 'Forge Synchronization Failed'}
           </p>
           {hydrated && !deck && (
-            <button 
+            <button
               onClick={() => router.push('/dashboard')}
               className="px-6 py-2 rounded-full border border-white/10 text-[9px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
             >
@@ -217,10 +196,11 @@ export default function StudyPage() {
   }
 
   if (sessionDone) return (
-    <SessionSummary 
-      deckName={deck.name} 
-      totalCards={cards.length} 
+    <SessionSummary
+      deckName={deck.name}
+      totalCards={cards.length}
       stats={sessionResults}
+      cardResults={cardResults}
       aiFeedback={aiFeedback}
       isGenerating={isGeneratingFeedback}
       onReset={() => {
@@ -228,7 +208,9 @@ export default function StudyPage() {
         setSessionDone(false);
         setIsFlipped(false);
         setSessionResults({ easy: 0, medium: 0, hard: 0, again: 0 });
-        setAiFeedback("");
+        setCardResults([]);
+        setRatedCardIds(new Set());
+        setAiFeedback('');
       }}
     />
   );
@@ -238,30 +220,28 @@ export default function StudyPage() {
 
   const getSubject = (name: string): MascotSubject => {
     const n = name.toLowerCase();
-    if (n.includes('math') || n.includes('calc')) return 'math';
-    if (n.includes('geo') || n.includes('map')) return 'geography';
-    if (n.includes('hist') || n.includes('war')) return 'history';
+    if (n.includes('math') || n.includes('calc'))  return 'math';
+    if (n.includes('geo')  || n.includes('map'))   return 'geography';
+    if (n.includes('hist') || n.includes('war'))   return 'history';
     if (n.includes('lang') || n.includes('vocab')) return 'language';
     return 'science';
   };
 
-  const subject = getSubject(deck.name);
-  const progress = ((idx) / cards.length) * 100;
+  const subject  = getSubject(deck.name);
+  const progress = (idx / cards.length) * 100;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] py-8 px-4 flex flex-col items-center overflow-x-hidden">
       {/* 🌌 CINEMATIC ENGINE LAYER */}
       <CinematicBackground subject={subject} />
-
-      {/* Visual Overlays */}
       <XPPopup popup={xpPopup} />
 
       <div className="w-full max-w-5xl flex flex-col gap-10 z-10">
-        
+
         {/* HEADER BAR */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-4">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => router.push('/dashboard')}
               className="p-3 rounded-2xl bg-[#0f0a1e]/80 backdrop-blur-md border border-white/5 hover:bg-[#1a1040] transition-all shadow-xl"
             >
@@ -287,93 +267,86 @@ export default function StudyPage() {
           )}
         </div>
 
-        {/* PROGRESS SYSTEM */}
+        {/* PROGRESS BAR */}
         <div className="px-4">
           <div className="h-2 w-full bg-[#0f0a1e]/60 backdrop-blur-sm rounded-full overflow-hidden border border-white/10 p-[2px]">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-purple-600 via-purple-400 to-emerald-500 rounded-full transition-all duration-700 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
-        {/* 🎬 CHARACTER-CARD SCENE */}
+        {/* 🎬 CHARACTER + CARD SCENE */}
         <div className="relative flex flex-col items-center justify-center py-12 px-4">
-          
           <div className="relative w-full max-w-4xl flex items-center justify-center gap-4 md:gap-12 min-h-[350px]">
-            
-            {/* SPARKY (Left) */}
+
+            {/* LEFT MASCOT */}
             <div className="hidden lg:flex flex-col items-center gap-4 pb-12 self-end">
-              <MascotCharacter 
-                side="left"
-                name="Sparky"
-                subject={subject}
-                state={leftMascotState}
-                onClick={() => {
-                  setLeftMascotState('jumping');
-                  setTimeout(() => setLeftMascotState('reading'), 700);
-                }}
+              <MascotCharacter
+                side="left" name="Sparky" subject={subject} state={leftMascotState}
+                onClick={() => { setLeftMascotState('jumping'); setTimeout(() => setLeftMascotState('reading'), 700); }}
               />
               <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Guardian</span>
             </div>
 
-            {/* THE CARD */}
-            <FlashCard3D 
-              card={currentCard}
-              subject={subject}
-              isFlipped={isFlipped}
-              onFlip={() => setIsFlipped(!isFlipped)}
-              shake={shake}
-            />
-
-            {/* NOVA (Right) */}
-            <div className="hidden lg:flex flex-col items-center gap-4 pb-12 self-end">
-              <MascotCharacter 
-                side="right"
-                name="Nova"
+            {/* THE CARD — with illustration injected via FlashCard3D */}
+            <div className="relative w-full max-w-[440px]">
+              <FlashCard3D
+                card={currentCard}
                 subject={subject}
-                state={rightMascotState}
-                onClick={() => {
-                  setRightMascotState('jumping');
-                  setTimeout(() => setRightMascotState('idle'), 700);
-                }}
+                isFlipped={isFlipped}
+                onFlip={() => setIsFlipped(!isFlipped)}
+                shake={shake}
+              />
+              {/* Illustration overlaid on card front (only when not flipped) */}
+              {!isFlipped && (
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex items-start justify-end px-5 pt-5" style={{ zIndex: 5 }}>
+                  <CardIllustration cardText={currentCard.front} />
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT MASCOT */}
+            <div className="hidden lg:flex flex-col items-center gap-4 pb-12 self-end">
+              <MascotCharacter
+                side="right" name="Nova" subject={subject} state={rightMascotState}
+                onClick={() => { setRightMascotState('jumping'); setTimeout(() => setRightMascotState('idle'), 700); }}
               />
               <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Hype-Bot</span>
             </div>
-
           </div>
 
-          {/* Action Row */}
-          <div className={`mt-16 w-full max-w-2xl transition-all duration-500 flex flex-col items-center gap-8 ${isFlipped ? 'opacity-100 translate-y-0 scale-100' : 'opacity-20 translate-y-4 scale-95 pointer-events-none grayscale'}`}>
+          {/* ⬅️ CARD NAVIGATION */}
+          <CardNavigation
+            current={idx}
+            total={cards.length}
+            onPrev={() => { setIdx(i => Math.max(0, i - 1)); setIsFlipped(false); }}
+            onNext={() => { setIdx(i => Math.min(cards.length - 1, i + 1)); setIsFlipped(false); }}
+          />
+
+          {/* RATING BUTTONS */}
+          <div className={`mt-10 w-full max-w-2xl transition-all duration-500 flex flex-col items-center gap-8 ${isFlipped ? 'opacity-100 translate-y-0 scale-100' : 'opacity-20 translate-y-4 scale-95 pointer-events-none grayscale'}`}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
               {[
-                { label: 'Again', val: 'again' as DifficultyLevel, color: 'rgb(239, 68, 68)', hint: '1' },
-                { label: 'Hard', val: 'hard' as DifficultyLevel, color: 'rgb(245, 158, 11)', hint: '2' },
-                { label: 'Good', val: 'medium' as DifficultyLevel, color: 'rgb(16, 185, 129)', hint: '3' },
-                { label: 'Easy', val: 'easy' as DifficultyLevel, color: 'rgb(59, 130, 246)', hint: '4' },
-              ].map((btn) => (
+                { label: 'Again', val: 'again' as DifficultyLevel, color: 'rgb(239,68,68)',   hint: '1' },
+                { label: 'Hard',  val: 'hard'  as DifficultyLevel, color: 'rgb(245,158,11)',  hint: '2' },
+                { label: 'Good',  val: 'medium' as DifficultyLevel, color: 'rgb(16,185,129)', hint: '3' },
+                { label: 'Easy',  val: 'easy'  as DifficultyLevel, color: 'rgb(59,130,246)',  hint: '4' },
+              ].map(btn => (
                 <button
                   key={btn.label}
                   onClick={() => handleRate(btn.val)}
                   className="group relative flex flex-col items-center gap-2 px-4 py-4 rounded-3xl bg-[#0f0a1e]/80 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all active:scale-95 shadow-2xl overflow-hidden"
                 >
-                  {/* Dynamic Glow Background */}
-                  <div 
-                    className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"
-                    style={{ background: btn.color }}
-                  />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity" style={{ background: btn.color }} />
                   <span className="text-[11px] font-black uppercase tracking-widest text-white/80">{btn.label}</span>
-                  <div className="flex items-center gap-2">
-                    <kbd className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-white/40 font-mono">
-                      {btn.hint}
-                    </kbd>
-                  </div>
+                  <kbd className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-white/40 font-mono">{btn.hint}</kbd>
                 </button>
               ))}
             </div>
-            
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 animate-pulse">
-              Space bar to reveal answer
+              Space bar to reveal · ← → to navigate
             </p>
           </div>
         </div>
