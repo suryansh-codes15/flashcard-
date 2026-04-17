@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Sparkles, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertCircle, CheckCircle, Info, Loader2 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import FlashCard from '@/components/FlashCard';
 import XPBar from '@/components/XPBar';
@@ -16,7 +16,7 @@ export default function StudyPage() {
   const params = useParams();
   const router = useRouter();
   const deckId = params.deckId as string;
-  const { getDeck, getCardsForReview, rateCard, getStats } = useFlashcardStore();
+  const { getDeck, getCardsForReview, getDeckCards, rateCard, getStats } = useFlashcardStore();
 
   const deck = getDeck(deckId);
   const stats = getStats();
@@ -31,13 +31,19 @@ export default function StudyPage() {
   const [shake, setShake] = useState(false);
 
   useEffect(() => {
-    const reviewCards = getCardsForReview(deckId);
+    let reviewCards = getCardsForReview(deckId);
+    
+    // If no cards are due (common for brand new decks), study everything
+    if (reviewCards.length === 0) {
+      reviewCards = getDeckCards(deckId);
+    }
+
     if (reviewCards.length > 0) {
       setCards(reviewCards);
     } else if (deck) {
       setSessionDone(true);
     }
-  }, [deckId, getCardsForReview, deck]);
+  }, [deckId, getCardsForReview, getDeckCards, deck]);
 
   const handleRate = useCallback((rating: DifficultyLevel) => {
     if (!cards[idx]) return;
@@ -75,7 +81,14 @@ export default function StudyPage() {
     }
   }, [idx, cards, rateCard]);
 
-  if (!deck) return null;
+  if (!deck) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-white/50">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+        <p className="font-black uppercase tracking-widest text-[10px]">Synchronizing Forge Data...</p>
+      </div>
+    );
+  }
   if (sessionDone) return (
     <SessionSummary 
       deckName={deck.name} 
