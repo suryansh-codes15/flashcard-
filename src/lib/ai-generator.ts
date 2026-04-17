@@ -45,10 +45,13 @@ Required JSON Structure per card:
 
 ${TEMPLATE_RULES}`;
 
+// CRITICAL: If you provide the "options" array, you MUST set "type": "mcq". 
+// Do not use "concept" for questions with multiple choices.
+
 const TEMPLATES: Record<string, string> = {
-  concept: `Create cards that explain the mechanics and logic. Mix conceptual questions with MCQs (25% ratio).`,
-  exam: `Create high-yield cards. Include 30% complex MCQs focused on critical patterns.`,
-  problem: `Create scenario-based application cards. Focus on "how to apply" this logic.`,
+  concept: `Create cards that explain the mechanics and logic. Mix conceptual questions with MCQs prominently (40% ratio).`,
+  exam: `Create high-yield cards. Include 55% complex MCQs focused on critical patterns and potential traps.`,
+  problem: `Create scenario-based application cards. Focus on "how to apply" this logic using a mix of problems and MCQs.`,
 };
 
 interface RawCard {
@@ -183,7 +186,13 @@ export async function generateFlashcards(
   const now = new Date().toISOString();
 
   const flashcards: Flashcard[] = deduplicated.map((rc, idx) => {
-    const cardType = (rc.type?.toLowerCase() as CardType) || 'concept';
+    let cardType = (rc.type?.toLowerCase() as CardType) || 'concept';
+    
+    // Safety Enforcer: If options exist, it MUST be an MCQ for the UI to render properly
+    if (rc.options && Array.isArray(rc.options) && rc.options.length > 0) {
+      cardType = 'mcq';
+    }
+
     return {
       id: `card-${deckId}-${idx}-${Date.now() + idx}`,
       deckId,
