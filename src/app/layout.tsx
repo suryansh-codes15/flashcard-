@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import ThemeBackdrop from '@/components/layout/ThemeBackdrop';
-import NavBar from '@/components/layout/NavBar';
+import CinematicBackground from '../components/layout/CinematicBackground';
+import NavBar from '../components/layout/NavBar';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,8 +18,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="custom-scrollbar">
-      <body className={`${inter.variable} font-sans antialiased bg-[#0a0616]`}>
-        <ThemeBackdrop />
+      <head>
+        <style>{`
+          body { background-color: #050510 !important; color: white !important; }
+        `}</style>
+      </head>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <CinematicBackground />
         <div className="relative z-10 flex flex-col min-h-screen">
           <NavBar />
           <main className="flex-1">{children}</main>

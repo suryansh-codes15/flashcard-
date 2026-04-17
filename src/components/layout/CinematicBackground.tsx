@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { MascotSubject } from '@/types';
+import { MascotSubject } from '../../types';
 
 interface Props {
   subject?: MascotSubject;

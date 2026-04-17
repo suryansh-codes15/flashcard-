@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Sparkles, Brain, Shield, Zap } from 'lucide-react';
-import MascotCharacter from '@/components/MascotCharacter';
+import MascotCharacter from '../components/MascotCharacter';
 
 
 export default function LandingPage() {

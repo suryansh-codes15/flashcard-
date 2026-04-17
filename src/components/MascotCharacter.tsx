@@ -1,6 +1,6 @@
 'use client';
 
-import { MascotSubject } from '@/types';
+import { MascotSubject } from '../types';
 
 export type MascotState = 'idle' | 'reading' | 'dancing' | 'jumping' | 'sad';
 
