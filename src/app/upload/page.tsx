@@ -10,6 +10,7 @@ import { useFlashcardStore } from '@/store/flashcard-store';
 import { generateId, getDeckEmoji } from '@/lib/utils';
 import type { GenerationProgress, Flashcard, ClassLevel } from '@/types';
 import MascotCharacter from '@/components/MascotCharacter';
+import SampleLibrary from '@/components/forge/SampleLibrary';
 
 const MODES = [
   { id: 'concept', label: 'Deep Learning', emoji: '🧠', desc: 'Core concept & definitions', mascot: 'science', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' },
@@ -43,6 +44,26 @@ export default function UploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (selected && selected.name.endsWith('.pdf')) setFile(selected);
+  };
+
+  const handleLibrarySelect = async (url: string, name: string) => {
+    try {
+      setStage('uploading');
+      setStatusMsg('Downloading library sample...');
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const libraryFile = new File([blob], `${name}.pdf`, { type: 'application/pdf' });
+      setFile(libraryFile);
+      // Wait for state to settle then trigger generate
+      setTimeout(() => {
+        const forgeBtn = document.getElementById('forge-btn');
+        forgeBtn?.click();
+      }, 500);
+    } catch (err) {
+      console.error('Failed to load library sample:', err);
+      setError('Failed to download library sample.');
+      setStage('error');
+    }
   };
 
   const handleGenerate = async () => {
@@ -207,6 +228,12 @@ export default function UploadPage() {
               ))}
             </div>
           </section>
+
+          {/* LIBRARY SECTION */}
+          <div className="pt-4">
+            <SampleLibrary onSelect={handleLibrarySelect} />
+          </div>
+
         </div>
 
         {/* RIGHT COLUMN: CAPTURE AREA */}
@@ -302,6 +329,7 @@ export default function UploadPage() {
             {/* ACTION BUTTON */}
             {stage === 'idle' && file && (
               <button 
+                id="forge-btn"
                 onClick={handleGenerate}
                 className="w-full py-6 rounded-[24px] bg-purple-600 text-white font-black text-lg flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-purple-900/40"
               >
