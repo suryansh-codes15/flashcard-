@@ -80,6 +80,7 @@ export interface Deck {
   tags?: string[];
   templateId: TemplateId;
   emoji?: string;
+  masteryPercentage?: number;
   dominantPalette?: ColorPalette;
 }
 

@@ -97,8 +97,11 @@ export const useFlashcardStore = create<FlashcardStore>()(
             addCards: (cards) => set((state) => {
                 const newCards = [...state.flashcards, ...cards];
                 const newDecks = state.decks.map((deck) => {
-                    const count = newCards.filter((c) => c.deckId === deck.id).length;
-                    return { ...deck, cardCount: count };
+                    const deckCards = newCards.filter((c) => c.deckId === deck.id);
+                    const count = deckCards.length;
+                    const mastered = deckCards.filter((c) => c.interval >= 21).length;
+                    const mastery = count > 0 ? Math.round((mastered / count) * 100) : 0;
+                    return { ...deck, cardCount: count, masteredCount: mastered, masteryPercentage: mastery };
                 });
                 return { flashcards: newCards, decks: newDecks };
             }),
@@ -135,9 +138,13 @@ export const useFlashcardStore = create<FlashcardStore>()(
                     (c) => c.deckId === card.deckId && c.interval >= 21
                 ).length;
                 set((state) => ({
-                    decks: state.decks.map((d) =>
-                        d.id === card.deckId ? { ...d, masteredCount: masteredCards } : d
-                    ),
+                    decks: state.decks.map((d) => {
+                        if (d.id === card.deckId) {
+                            const mastery = d.cardCount > 0 ? Math.round((masteredCards / d.cardCount) * 100) : 0;
+                            return { ...d, masteredCount: masteredCards, masteryPercentage: mastery };
+                        }
+                        return d;
+                    }),
                     // Award XP for easy/correct cards
                     xp: rating === 'easy' ? state.xp + 10 : state.xp
                 }));
