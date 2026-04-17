@@ -25,6 +25,7 @@ export default function StudyPage() {
   const [idx, setIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
+  const [sessionResults, setSessionResults] = useState({ easy: 0, medium: 0, hard: 0 });
   const [showXP, setShowXP] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [shake, setShake] = useState(false);
@@ -57,6 +58,12 @@ export default function StudyPage() {
     // Process SRS
     rateCard(cards[idx].id, rating);
 
+    // Update session stats
+    setSessionResults(prev => ({
+      ...prev,
+      [rating === 'easy' ? 'easy' : rating === 'medium' ? 'medium' : 'hard']: prev[rating === 'easy' ? 'easy' : rating === 'medium' ? 'medium' : 'hard'] + 1
+    }));
+
     // Next Card
     if (idx < cards.length - 1) {
       setTimeout(() => {
@@ -69,7 +76,19 @@ export default function StudyPage() {
   }, [idx, cards, rateCard]);
 
   if (!deck) return null;
-  if (sessionDone) return <SessionSummary deckId={deckId} />;
+  if (sessionDone) return (
+    <SessionSummary 
+      deckName={deck.name} 
+      totalCards={cards.length} 
+      stats={sessionResults} 
+      onReset={() => {
+        setIdx(0);
+        setSessionDone(false);
+        setIsFlipped(false);
+        setSessionResults({ easy: 0, medium: 0, hard: 0 });
+      }}
+    />
+  );
 
   const currentCard = cards[idx];
   if (!currentCard) return null;
