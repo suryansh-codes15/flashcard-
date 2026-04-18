@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function CinematicBackground({ subject = 'science' }: Props) {
-  const [stars, setStars] = useState<{ id: number; left: string; top: string; delay: string; size: string }[]>([]);
+  const [stars, setStars] = useState<{ id: number; left: string; top: string; delay: string; size: string; duration: string }[]>([]);
   const [particles, setParticles] = useState<{ id: number; left: string; color: string; duration: string }[]>([]);
 
   useEffect(() => {
