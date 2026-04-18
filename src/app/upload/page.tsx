@@ -271,7 +271,7 @@ export default function UploadPage() {
                   </div>
                   <div className="text-center space-y-1 px-8">
                     <p className="text-sm font-black text-white uppercase tracking-widest">
-                      {file ? file.name : 'Target Acquired'}
+                      {file ? file.name : 'Engine ready · Drop your PDF to begin'}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
                       {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · Ready for Forge` : 'Drop PDF or Click to browse'}
@@ -286,55 +286,55 @@ export default function UploadPage() {
                     </button>
                   )}
                 </>
-              ) : stage === 'uploading' || stage === 'generating' ? (
-                <div className="flex flex-col items-center gap-6 px-10 text-center">
-                  <div className="relative">
-                    <div className="w-24 h-24 rounded-full border-4 border-purple-500/10 border-t-purple-500 animate-spin" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Zap className="w-8 h-8 text-purple-400 animate-pulse" />
-                    </div>
+              ) : stage === 'uploading' ? (
+                <div className="flex flex-col items-center gap-6 w-full px-10 text-center animate-fade-up">
+                  <div className="w-full space-y-1">
+                    <p className="text-sm font-black text-white truncate max-w-[200px] mx-auto">{file?.name}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">{file ? (file.size / 1024 / 1024).toFixed(2) : 0} MB</p>
                   </div>
-                  <div className="space-y-2">
-                    <div className="text-2xl font-black text-white">{progress}%</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 animate-pulse">{statusMsg}</div>
+                  <div className="w-full h-2 rounded-full bg-[#1a1040] overflow-hidden">
+                    <div className="h-full bg-purple-500 transition-all duration-300" style={{ width: `${progress}%` }} />
                   </div>
-                  {cardCount > 0 && (
-                    <div className="px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest">
-                      {cardCount} Cards Forged
-                    </div>
-                  )}
+                  <div className="text-[11px] font-black uppercase tracking-widest text-purple-400 animate-pulse">Reading your PDF...</div>
+                </div>
+              ) : stage === 'generating' ? (
+                <div className="flex flex-col items-center gap-6 px-10 text-center animate-fade-up">
+                  <MascotCharacter subject="science" side="left" name="Sparky" state="reading" className="w-24 h-24 drop-shadow-[0_0_20px_rgba(139,92,246,0.3)] mb-2" />
+                  <p className="text-sm font-black text-white">AI Art Director is forging your cards...</p>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 animate-pulse">
+                    {statusMsg || 'Extracting key concepts...'}
+                  </div>
                 </div>
               ) : stage === 'done' ? (
-                <div className="flex flex-col items-center gap-6 px-10 text-center">
-                  <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.2)]">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                <div className="flex flex-col items-center gap-6 px-10 text-center relative w-full h-full justify-center">
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+                     {Array.from({ length: 24 }).map((_, i) => (
+                       <div key={i} className="absolute text-xl animate-confetti-burst" style={{ transform: `rotate(${Math.random() * 360}deg)`, animationDuration: `${0.5 + Math.random() * 0.5}s` }}>
+                         {['✨', '🔥', '🚀'][Math.floor(Math.random()*3)]}
+                       </div>
+                     ))}
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-2xl font-black text-white">Forge Complete!</h3>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
-                      {cardCount} Tactical cards are ready for your study session
-                    </p>
+                  <h3 className="text-2xl font-black text-emerald-400 z-20">✅ {cardCount} cards forged!</h3>
+                  <div className="flex flex-col mt-4 w-full z-20 perspective-1000 items-center overflow-hidden h-[120px] pt-4">
+                     {[1,2,3].map((num, i) => (
+                       <div key={num} className="w-[80%] h-16 bg-[#1a1040] border border-white/10 rounded-xl flex items-center justify-center -mt-6 shadow-xl" style={{ transform: `translateZ(${-(i*10)}px) scale(${1 - i*0.05})`, zIndex: 10 - i }}>
+                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Card Preview</span>
+                       </div>
+                     ))}
                   </div>
                   <button 
-                    onClick={() => {
-                      if (newDeckId) router.push(`/practice/${newDeckId}`);
-                    }}
-                    className="mt-4 px-8 py-4 rounded-2xl bg-emerald-600 text-white font-black flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-emerald-900/20"
+                    onClick={() => router.push('/dashboard')}
+                    className="mt-6 px-8 py-4 rounded-full bg-emerald-600 text-white font-black z-20 hover:scale-105 active:scale-95 transition-all w-full md:w-auto"
                   >
-                    <Rocket className="w-5 h-5" />
-                    Launch Practice
+                    Start studying →
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-6 px-10 text-center">
-                  <div className="w-20 h-20 rounded-full bg-rose-500/20 flex items-center justify-center">
-                    <AlertCircle className="w-10 h-10 text-rose-400" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-black text-white uppercase">Forge Error</p>
-                    <p className="text-[10px] text-rose-400/60 font-medium">{error}</p>
-                  </div>
-                  <button onClick={() => setStage('idle')} className="text-[10px] font-black uppercase text-white/40 hover:text-white underline underline-offset-4">Retry Forge</button>
+                <div className="flex flex-col items-center gap-4 px-10 py-8 text-center border-2 border-red-500/50 rounded-[40px] bg-red-900/10">
+                  <AlertCircle className="w-10 h-10 text-red-500 mb-2" />
+                  <p className="text-xl font-black text-rose-400">Forge failed</p>
+                  <p className="text-[11px] font-bold text-rose-400/80 uppercase tracking-widest">{error}</p>
+                  <button onClick={() => setStage('idle')} className="mt-4 px-6 py-2 rounded-full border border-red-500/30 text-rose-400 text-[10px] font-black uppercase hover:bg-red-500/10 transition-colors">Try again</button>
                 </div>
               )}
             </div>

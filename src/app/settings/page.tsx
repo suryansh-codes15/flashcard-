@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Settings, Shield, Zap, Bell, Volume2, Globe, Palette } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, Shield, Zap, Bell, AlertTriangle } from 'lucide-react';
 import ToggleSwitch from '@/components/ToggleSwitch';
 
 export default function SettingsPage() {
@@ -10,22 +10,205 @@ export default function SettingsPage() {
   const [autoNext, setAutoNext] = useState(false);
   const [showProgress, setShowProgress] = useState(true);
 
+  // AI Config
+  const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [model, setModel] = useState('Gemini Flash');
+
+  // Notifications
+  const [dailyReminder, setDailyReminder] = useState(true);
+  const [reminderTime, setReminderTime] = useState('19:00');
+  const [streakWarning, setStreakWarning] = useState(true);
+
+  useEffect(() => {
+    const savedKey = localStorage.getItem('forge_api_key');
+    if (savedKey) setApiKey(savedKey);
+  }, []);
+
+  const handleSaveKey = () => {
+    localStorage.setItem('forge_api_key', apiKey);
+    alert('API Key saved securely to local storage.');
+  };
+
+  const handleClearData = () => {
+    if (confirm('Are you absolutely sure? This will wipe all decks, flashcards, and sessions. This cannot be undone.')) {
+      localStorage.removeItem('flashforge-storage');
+      window.location.reload();
+    }
+  };
+
+  const handleResetXP = () => {
+    if (confirm('Are you sure you want to reset your XP and Level back to 1?')) {
+      const storage = localStorage.getItem('flashforge-storage');
+      if (storage) {
+        const data = JSON.parse(storage);
+        data.state.xp = 0;
+        localStorage.setItem('flashforge-storage', JSON.stringify(data));
+        window.location.reload();
+      }
+    }
+  };
+
+  const handleExportData = () => {
+    if (confirm('Export all your study data to a JSON file?')) {
+      const storage = localStorage.getItem('flashforge-storage');
+      if (storage) {
+        const blob = new Blob([storage], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `flashforge-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+  };
+
   const sections = [
     {
-      title: 'Study Experience',
+      title: 'AI Configuration',
       icon: Zap,
-      options: [
-        { id: 'kid-mode', label: 'Master Mascot Mode', desc: 'Enable subject-aware chibi characters and gamified feedback.', val: kidMode, set: setKidMode },
-        { id: 'auto-next', label: 'Auto-Advance Cards', desc: 'Automatically move to the next card after rating.', val: autoNext, set: setAutoNext },
-        { id: 'show-prog', label: 'Session Progress Bar', desc: 'Show visual progress at the top of study sessions.', val: showProgress, set: setShowProgress },
-      ]
+      content: (
+        <div className="space-y-4">
+          <div className="p-6 rounded-[20px] bg-[#0f0a1e] border border-white/5 shadow-xl space-y-4">
+            <div>
+              <label className="text-[13px] font-black text-white uppercase tracking-wider block mb-1">Gemini API Key</label>
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed mb-4">
+                Used for Forge AI generation.
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  placeholder="AIza..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="flex-1 bg-[#1a1040] border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:outline-none focus:border-purple-500"
+                />
+                <button
+                  onClick={() => setShowKey(!showKey)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[11px] font-black text-white uppercase tracking-widest transition-colors"
+                >
+                  {showKey ? 'Hide' : 'Show'}
+                </button>
+                <button
+                  onClick={handleSaveKey}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-[11px] font-black text-white uppercase tracking-widest transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[13px] font-black text-white uppercase tracking-wider block mb-2 mt-4">AI Model</label>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full bg-[#1a1040] border border-white/10 rounded-xl px-4 py-2 text-white font-medium text-sm focus:outline-none focus:border-purple-500 appearance-none"
+              >
+                <option value="Gemini Flash">Gemini Flash (Fastest)</option>
+                <option value="Gemini Pro">Gemini Pro</option>
+                <option value="GPT-4o">GPT-4o</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )
     },
     {
-      title: 'System & Feedback',
+      title: 'Study Experience',
+      icon: Settings,
+      content: (
+        <div className="space-y-4">
+          {[
+            { id: 'kid-mode', label: 'Master Mascot Mode', desc: 'Enable subject-aware chibi characters and gamified feedback.', val: kidMode, set: setKidMode },
+            { id: 'auto-next', label: 'Auto-Advance Cards', desc: 'Automatically move to the next card after rating.', val: autoNext, set: setAutoNext },
+            { id: 'show-prog', label: 'Session Progress Bar', desc: 'Show visual progress at the top of study sessions.', val: showProgress, set: setShowProgress },
+            { id: 'sounds', label: 'Sparkle Sound Effects', desc: 'Enable tactile audio feedback on card flips.', val: soundEffects, set: setSoundEffects },
+          ].map((opt) => (
+            <div 
+              key={opt.id}
+              className="flex items-center justify-between p-6 rounded-[20px] bg-[#0f0a1e] border border-white/5 shadow-xl hover:border-purple-500/20 transition-all"
+            >
+              <div className="space-y-1 pr-10">
+                <p className="text-[13px] font-black text-white uppercase tracking-wider">{opt.label}</p>
+                <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                  {opt.desc}
+                </p>
+              </div>
+              <ToggleSwitch enabled={opt.val} onChange={opt.set} />
+            </div>
+          ))}
+        </div>
+      )
+    },
+    {
+      title: 'Notifications',
       icon: Bell,
-      options: [
-        { id: 'sounds', label: 'Sparkle Sound Effects', desc: 'Enable tactile audio feedback on card flips.', val: soundEffects, set: setSoundEffects },
-      ]
+      content: (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-6 rounded-[20px] bg-[#0f0a1e] border border-white/5 shadow-xl transition-all">
+            <div className="space-y-1 pr-10 flex-1">
+              <p className="text-[13px] font-black text-white uppercase tracking-wider">Daily Reminder</p>
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                Remind you to forge and study.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              {dailyReminder && (
+                <input 
+                  type="time" 
+                  value={reminderTime}
+                  onChange={(e) => setReminderTime(e.target.value)}
+                  className="bg-[#1a1040] border border-white/10 rounded-xl px-3 py-1.5 text-white font-medium focus:outline-none"
+                />
+              )}
+              <ToggleSwitch enabled={dailyReminder} onChange={setDailyReminder} />
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between p-6 rounded-[20px] bg-[#0f0a1e] border border-white/5 shadow-xl transition-all">
+            <div className="space-y-1 pr-10">
+              <p className="text-[13px] font-black text-white uppercase tracking-wider">Streak At Risk Warning</p>
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                Alert me if my streak is about to be lost.
+              </p>
+            </div>
+            <ToggleSwitch enabled={streakWarning} onChange={setStreakWarning} />
+          </div>
+        </div>
+      )
+    },
+    {
+      title: 'Danger Zone',
+      icon: AlertTriangle,
+      content: (
+        <div className="p-6 rounded-[20px] bg-[#2a0e14] border border-red-500/20 shadow-xl space-y-4">
+          <p className="text-[11px] text-red-400/80 font-bold uppercase tracking-widest leading-relaxed mb-6">
+            These actions are irreversible. Please proceed with caution.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleExportData}
+              className="w-full text-left px-6 py-4 rounded-xl border border-red-500/30 text-red-400 font-black text-[13px] uppercase tracking-wider hover:bg-red-500/10 transition-colors"
+            >
+              Export My Data
+            </button>
+            <button
+              onClick={handleResetXP}
+              className="w-full text-left px-6 py-4 rounded-xl border border-red-500/30 text-red-500 font-black text-[13px] uppercase tracking-wider hover:bg-red-600/10 transition-colors"
+            >
+              Reset XP and Level
+            </button>
+            <button
+              onClick={handleClearData}
+              className="w-full text-left px-6 py-4 rounded-xl border border-red-500/50 text-red-500 font-black text-[13px] uppercase tracking-wider hover:bg-red-600/20 transition-colors bg-red-500/5"
+            >
+              Clear All Study Data
+            </button>
+          </div>
+        </div>
+      )
     }
   ];
 
@@ -47,53 +230,16 @@ export default function SettingsPage() {
         {sections.map((section) => (
           <div key={section.title} className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-purple-600/10 text-purple-400">
+              <div className={`p-2 rounded-xl text-white ${section.title === 'Danger Zone' ? 'bg-red-600/10 text-red-500' : 'bg-purple-600/10 text-purple-400'}`}>
                 <section.icon className="w-5 h-5" />
               </div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tight">{section.title}</h2>
+              <h2 className={`text-xl font-black uppercase tracking-tight ${section.title === 'Danger Zone' ? 'text-red-500' : 'text-white'}`}>
+                {section.title}
+              </h2>
             </div>
-
-            <div className="space-y-4">
-              {section.options.map((opt) => (
-                <div 
-                  key={opt.id}
-                  className="flex items-center justify-between p-6 rounded-[20px] bg-[#0f0a1e] border border-white/5 shadow-xl hover:border-purple-500/20 transition-all"
-                >
-                  <div className="space-y-1 pr-10">
-                    <p className="text-[13px] font-black text-white uppercase tracking-wider">{opt.label}</p>
-                    <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
-                      {opt.desc}
-                    </p>
-                  </div>
-                  <ToggleSwitch enabled={opt.val} onChange={opt.set} />
-                </div>
-              ))}
-            </div>
+            {section.content}
           </div>
         ))}
-
-        {/* IDENTITY SECTION */}
-        <div className="space-y-6 border-t border-white/5 pt-12">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-pink-600/10 text-pink-400">
-              <Shield className="w-5 h-5" />
-            </div>
-            <h2 className="text-xl font-black text-white uppercase tracking-tight">Identity & Storage</h2>
-          </div>
-
-          <div className="bg-[#0f0a1e] border border-white/5 p-8 rounded-[24px] shadow-2xl flex flex-col md:flex-row items-center gap-8">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center border-4 border-[#1a1040]">
-              <span className="text-3xl font-black text-white">S</span>
-            </div>
-            <div className="flex-1 text-center md:text-left space-y-1">
-              <h3 className="text-2xl font-black text-white">Master Forge User</h3>
-              <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Level 7 Pioneer · 1,240 XP Earned</p>
-            </div>
-            <div className="px-6 py-2 rounded-full border border-pink-500/30 text-pink-500 text-[10px] font-black uppercase tracking-widest bg-pink-500/5">
-              Local Storage Active
-            </div>
-          </div>
-        </div>
       </div>
 
     </div>
