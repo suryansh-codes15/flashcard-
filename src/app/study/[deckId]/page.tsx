@@ -15,7 +15,14 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
+  const [sessionStats, setSessionStats] = useState({ 
+    correct: 0, 
+    total: 0,
+    easy: 0,
+    medium: 0,
+    hard: 0,
+    again: 0
+  });
   const [isFinished, setIsFinished] = useState(false);
 
   // States for animations
@@ -51,8 +58,10 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     
     // Update stats
     setSessionStats(prev => ({
+      ...prev,
       correct: prev.correct + (isCorrect ? 1 : 0),
-      total: prev.total + 1
+      total: prev.total + 1,
+      [rating]: prev[rating as keyof typeof prev] + 1
     }));
 
     // Trigger animations
@@ -104,11 +113,21 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     addSession({
       id: crypto.randomUUID(),
       deckId: deckId,
+      deckName: deck.title || 'Untitled Deck',
       startedAt: sessionStartedTime.current,
       finishedAt: new Date().toISOString(),
       cardsStudied: sessionStats.total,
       cardsCorrect: sessionStats.correct,
-      accuracy: sessionStats.total > 0 ? (sessionStats.correct / sessionStats.total) * 100 : 0
+      accuracy: sessionStats.total > 0 ? (sessionStats.correct / sessionStats.total) * 100 : 0,
+      stats: {
+        easy: sessionStats.easy,
+        medium: sessionStats.medium,
+        hard: sessionStats.hard,
+        again: sessionStats.again
+      },
+      weakTopics: [],
+      strongTopics: [],
+      improvement: 0
     });
     setIsFinished(true);
   };
