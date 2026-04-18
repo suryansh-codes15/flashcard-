@@ -1,5 +1,6 @@
 import type { Config } from 'tailwindcss';
 
+// Force re-scan for restoration: 2026-04-18T15:36
 const config: Config = {
     content: [
         './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
