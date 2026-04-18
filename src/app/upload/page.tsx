@@ -50,15 +50,21 @@ export default function UploadPage() {
     try {
       setStage('uploading');
       setStatusMsg('Downloading library sample...');
-      const response = await fetch(`/api/proxy-download?url=${encodeURIComponent(url)}`);
+      
+      // Determine if it's a local asset or external URL
+      const isLocal = url.startsWith('/');
+      const fetchUrl = isLocal ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`;
+      
+      const response = await fetch(fetchUrl);
       
       if (!response.ok) {
-        throw new Error('Failed to download from proxy');
+        throw new Error(`Failed to download ${isLocal ? 'local' : 'library'} sample`);
       }
       
       const blob = await response.blob();
       const libraryFile = new File([blob], `${name}.pdf`, { type: 'application/pdf' });
       setFile(libraryFile);
+      
       // Wait for state to settle then trigger generate
       setTimeout(() => {
         const forgeBtn = document.getElementById('forge-btn');

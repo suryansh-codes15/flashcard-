@@ -54,6 +54,58 @@ export default function SampleLibrary({ onSelect }: SampleLibraryProps) {
     fetchSamples();
   }, []);
 
+  const initializeLibrary = async () => {
+    setLoading(true);
+    const initialSamples = [
+      {
+        name: 'Mathematics Revision',
+        emoji: '📐',
+        description: 'Complete Revision Notes for CBSE Class 10 Standard Mathematics. Covers all major theorems and formulas.',
+        pdf_url: '/assets/Oswaal_CBSE_Class_10_Mathematics_Standard_Revision_Notes_For_2023_Exam_copy.pdf',
+        difficulty_tag: 'Advanced',
+        subject_mascot: 'science'
+      },
+      {
+        name: 'Science Revision',
+        emoji: '🧪',
+        description: 'Master Class 10 Science with detailed notes on Physics, Chemistry, and Biology essentials.',
+        pdf_url: '/assets/Oswaal_CBSE_Class_10_Science_Revision_Notes_For_2023_Exam_copy.pdf',
+        difficulty_tag: 'Intermediate',
+        subject_mascot: 'science'
+      },
+      {
+        name: 'English Language',
+        emoji: '📖',
+        description: 'Literature and language highlights for CBSE Class 10. Key themes, characters, and grammar.',
+        pdf_url: '/assets/Oswaal_CBSE_Class_10_English_Language_Literature_Revision_Notes_For_2023_Exam_copy.pdf',
+        difficulty_tag: 'Beginner',
+        subject_mascot: 'art'
+      },
+      {
+        name: 'Social Science',
+        emoji: '🌍',
+        description: 'Comprehensive overview of History, Geography, Civics, and Economics for Class 10.',
+        pdf_url: '/assets/Oswaal_CBSE_Class_10_Social_Science_Revision_Notes_For_2023_Exam_copy.pdf',
+        difficulty_tag: 'Intermediate',
+        subject_mascot: 'art'
+      }
+    ];
+
+    try {
+      const { error } = await supabase.from('sample_library').insert(initialSamples);
+      if (error) throw error;
+      
+      // Refresh samples
+      const { data } = await supabase.from('sample_library').select('*');
+      setSamples(data || []);
+    } catch (err) {
+      console.warn('Initialization failed:', err);
+      alert('Failed to initialize library. Please run the SQL script provided in the technical notes.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -63,8 +115,6 @@ export default function SampleLibrary({ onSelect }: SampleLibraryProps) {
     );
   }
 
-  if (samples.length === 0) return null;
-
   return (
     <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       <div className="flex items-center justify-between px-2">
@@ -72,49 +122,68 @@ export default function SampleLibrary({ onSelect }: SampleLibraryProps) {
           <Zap className="w-3 h-3 text-amber-400" />
           The FlashForge Library
         </h3>
-        <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Public Samples</span>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {samples.map((sample) => (
-          <button
-            key={sample.id}
-            onClick={() => onSelect(sample.pdf_url, sample.name)}
-            className="group relative flex items-start gap-4 p-5 rounded-[32px] bg-[#0f0a1e]/50 border border-white/5 hover:border-purple-500/40 hover:bg-[#1a1040]/40 transition-all text-left"
+        {samples.length > 0 ? (
+          <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Public Samples</span>
+        ) : (
+          <button 
+            onClick={initializeLibrary}
+            className="text-[9px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest flex items-center gap-2 transition-colors px-3 py-1 rounded-full bg-purple-500/5 border border-purple-500/10"
           >
-            {/* Mascot Icon */}
-            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <MascotCharacter 
-                subject={sample.subject_mascot as any} 
-                side="left"
-                name={sample.name}
-                state="idle"
-                className="w-8 h-8" 
-              />
-            </div>
-
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-lg leading-none">{sample.emoji}</span>
-                <h4 className="font-black text-white text-sm group-hover:text-purple-300 transition-colors uppercase tracking-tight">
-                  {sample.name}
-                </h4>
-              </div>
-              <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                {sample.description}
-              </p>
-              <div className="pt-2 flex items-center gap-3">
-                <div className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black uppercase text-gray-400 tracking-widest">
-                  {sample.difficulty_tag}
-                </div>
-                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[9px] font-black text-purple-400 uppercase tracking-widest transition-opacity">
-                  Instant Forge <ArrowRight className="w-3 h-3" />
-                </div>
-              </div>
-            </div>
+            Connect Local Assets <ArrowRight className="w-3 h-3" />
           </button>
-        ))}
+        )}
       </div>
+
+      {samples.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {samples.map((sample) => (
+            <button
+              key={sample.id}
+              onClick={() => onSelect(sample.pdf_url, sample.name)}
+              className="group relative flex items-start gap-4 p-5 rounded-[32px] bg-[#0f0a1e]/50 border border-white/5 hover:border-purple-500/40 hover:bg-[#1a1040]/40 transition-all text-left"
+            >
+              {/* Mascot Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <MascotCharacter 
+                  subject={sample.subject_mascot as any || 'science'} 
+                  side="left"
+                  name={sample.name}
+                  state="idle"
+                  className="w-8 h-8 relative z-10" 
+                />
+              </div>
+
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg leading-none">{sample.emoji || '📄'}</span>
+                  <h4 className="font-black text-white text-sm group-hover:text-purple-300 transition-colors uppercase tracking-tight">
+                    {sample.name}
+                  </h4>
+                </div>
+                <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
+                  {sample.description}
+                </p>
+                <div className="pt-2 flex items-center gap-3">
+                  <div className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black uppercase text-gray-400 tracking-widest">
+                    {sample.difficulty_tag || 'Standard'}
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[9px] font-black text-purple-400 uppercase tracking-widest transition-opacity">
+                    Instant Forge <ArrowRight className="w-3 h-3" />
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="p-12 rounded-[32px] border border-dashed border-white/5 flex flex-col items-center text-center gap-4 bg-white/[0.01]">
+           <Brain className="w-10 h-10 text-white/5" />
+           <p className="text-[11px] font-medium text-white/20 max-w-[240px]">
+             Your cloud library is currently empty. Click "Connect Local Assets" to register the revision notes.
+           </p>
+        </div>
+      )}
     </section>
   );
 }
