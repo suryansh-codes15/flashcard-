@@ -1,18 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { MascotSubject } from '../../types';
 
 interface Props {
   subject?: MascotSubject;
 }
 
-export default function CinematicBackground({ subject = 'science' }: Props) {
+function CinematicBackgroundComponent({ subject = 'science' }: Props) {
   const [stars, setStars] = useState<{ id: number; left: string; top: string; delay: string; size: string; duration: string }[]>([]);
   const [particles, setParticles] = useState<{ id: number; left: string; color: string; duration: string }[]>([]);
 
   useEffect(() => {
-    // Generate stars
+    // Generate stars - stationary, only once on mount
     const newStars = Array.from({ length: 150 }, (_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
@@ -23,7 +23,7 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
     }));
     setStars(newStars);
 
-    // Particle spawner
+    // Particle spawner - throttled for performance
     const colors = ['bg-purple-500', 'bg-teal-500', 'bg-amber-500', 'bg-pink-500'];
     let particleId = 0;
     
@@ -42,9 +42,10 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
           setParticles(current => current.filter(p => p.id !== id));
         }, 7000);
         
-        return [...prev, newParticle];
+        // Cap particles at 20 for performance "fasy" mode
+        return [...prev.slice(-19), newParticle];
       });
-    }, 400);
+    }, 600); // Slower spawn rate for better performance
 
     return () => {
       clearInterval(token);
@@ -69,6 +70,7 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
           background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)',
           top: '5%',
           right: '-5%',
+          display: subject === 'science' || subject === 'math' ? 'block' : 'none' // Conditional rendering for performance
         }}
       />
       <div 
@@ -107,7 +109,7 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
         }}
       />
 
-      {/* JS STAR FIELD */}
+      {/* JS STAR FIELD - Static rendering */}
       {stars.map(s => (
         <div
           key={s.id}
@@ -124,15 +126,15 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
         />
       ))}
 
-      {/* RISING PARTICLES */}
+      {/* RISING PARTICLES - Capped at 20 */}
       {particles.map(p => (
         <div
           key={p.id}
           className={`absolute bottom-[-20px] rounded-full opacity-0 animate-particleRise ${p.color}`}
           style={{
             left: p.left,
-            width: `${2 + Math.random() * 4}px`,
-            height: `${2 + Math.random() * 4}px`,
+            width: '3px',
+            height: '3px',
             animationDuration: p.duration,
           }}
         />
@@ -140,3 +142,6 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
     </div>
   );
 }
+
+const CinematicBackground = memo(CinematicBackgroundComponent);
+export default CinematicBackground;

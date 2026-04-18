@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { MascotSubject, MascotState } from '../types';
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
   className?: string;
 }
 
-export default function MascotCharacter({ side, name, subject, state, onClick, className = "" }: Props) {
+function MascotCharacterComponent({ side, name, subject, state, onClick, className = "" }: Props) {
   // Enhanced Color Map for all characters
   const colors = {
     science:   { body: '#8b5cf6', face: '#fbbf24' }, // Sparky (Purple)
@@ -205,3 +206,6 @@ export default function MascotCharacter({ side, name, subject, state, onClick, c
     </div>
   );
 }
+
+const MascotCharacter = memo(MascotCharacterComponent);
+export default MascotCharacter;
