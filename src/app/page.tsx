@@ -54,7 +54,9 @@ function HeroCard3D() {
 export default function LandingPage() {
   const [sparkles, setSparkles] = useState<{ width: string; height: string; top: string; left: string; delay: number }[]>([]);
   const [sparkyState, setSparkyState] = useState<'reading'|'jumping'>('reading');
-  const [novaState, setNovaState] = useState<'dancing'|'jumping'>('dancing');
+  const [novaState, setNovaState] = useState<'reading'|'jumping'>('reading');
+  const [atlasState, setAtlasState] = useState<'reading'|'jumping'>('reading');
+  const [lexieState, setLexieState] = useState<'reading'|'jumping'>('reading');
 
   useEffect(() => {
     const newSparkles = [...Array(6)].map(() => ({
@@ -67,13 +69,19 @@ export default function LandingPage() {
     setSparkles(newSparkles);
   }, []);
 
-  const handleMascotClick = (mascot: 'sparky' | 'nova') => {
+  const handleMascotClick = (mascot: 'sparky' | 'nova' | 'atlas' | 'lexie') => {
     if (mascot === 'sparky') {
       setSparkyState('jumping');
       setTimeout(() => setSparkyState('reading'), 700);
-    } else {
+    } else if (mascot === 'nova') {
       setNovaState('jumping');
-      setTimeout(() => setNovaState('dancing'), 700);
+      setTimeout(() => setNovaState('reading'), 700);
+    } else if (mascot === 'atlas') {
+      setAtlasState('jumping');
+      setTimeout(() => setAtlasState('reading'), 700);
+    } else if (mascot === 'lexie') {
+      setLexieState('jumping');
+      setTimeout(() => setLexieState('reading'), 700);
     }
   };
 
@@ -215,6 +223,73 @@ export default function LandingPage() {
             </div>
           </div>
         ))}
+      </section>
+
+      {/* 🐧 MASCOT ROW */}
+      <section className="py-20 border-t border-white/5 bg-black/20">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex flex-wrap justify-center gap-12 md:gap-24">
+            {/* Sparky */}
+            <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('sparky')}>
+              <MascotCharacter 
+                subject="science" 
+                side="left" 
+                name="Sparky" 
+                state={sparkyState} 
+                className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
+              />
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-[10px] font-black text-gray-400 tracking-[0.3em] uppercase group-hover:text-purple-400 transition-colors">Sparky</span>
+                <span className="text-[10px]">⚡</span>
+              </div>
+            </div>
+
+            {/* Nova */}
+            <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('nova')}>
+              <MascotCharacter 
+                subject="math" 
+                side="left" 
+                name="Nova" 
+                state={novaState} 
+                className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
+              />
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-[10px] font-black text-gray-400 tracking-[0.3em] uppercase group-hover:text-emerald-400 transition-colors">Nova</span>
+                <span className="text-[10px]">🪄</span>
+              </div>
+            </div>
+
+            {/* Atlas */}
+            <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('atlas')}>
+              <MascotCharacter 
+                subject="geography" 
+                side="left" 
+                name="Atlas" 
+                state={atlasState} 
+                className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
+              />
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-[10px] font-black text-gray-400 tracking-[0.3em] uppercase group-hover:text-blue-400 transition-colors">Atlas</span>
+                <span className="text-[10px]">🌍</span>
+              </div>
+            </div>
+
+            {/* Lexie */}
+            <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('lexie')}>
+              <MascotCharacter 
+                subject="history" 
+                side="left" 
+                name="Lexie" 
+                state={lexieState} 
+                className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
+              />
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-[10px] font-black text-gray-400 tracking-[0.3em] uppercase group-hover:text-amber-400 transition-colors">Lexie</span>
+                <span className="text-[10px]">📝</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Footer */}

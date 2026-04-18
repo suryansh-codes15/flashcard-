@@ -14,17 +14,20 @@ interface Props {
 }
 
 export default function MascotCharacter({ side, name, subject, state, onClick, className = "" }: Props) {
-  // Color Map per User Request
+  // Enhanced Color Map for all characters
   const colors = {
-    science:   { body: '#7c3aed', face: '#fbbf24', secondary: '#fb7185' },
-    math:      { body: '#059669', face: '#fbbf24', secondary: '#fb7185' },
-    geography: { body: '#2563eb', face: '#f3f4f6', secondary: '#94a3b8' },
-    history:   { body: '#d97706', face: '#fbbf24', secondary: '#92400e' },
-    language:  { body: '#db2777', face: '#f3f4f6', secondary: '#be185d' },
+    science:   { body: '#8b5cf6', face: '#fbbf24' }, // Sparky (Purple)
+    math:      { body: '#10b981', face: '#fbbf24' }, // Nova (Green)
+    geography: { body: '#3b82f6', face: '#f8fafc' }, // Atlas (Blue)
+    history:   { body: '#f59e0b', face: '#fbbf24' }, // Lexie (Orange)
+    language:  { body: '#ec4899', face: '#f8fafc' }, // Pink
   };
 
   const { body, face } = colors[subject] || colors.science;
   
+  // High-level "Home Page" logic: Everyone gets the Sparky crown/book if side is 'left'
+  const isSparkyStyle = side === 'left';
+
   // Dynamic Animation Class mapping
   const animationClass = {
     idle: side === 'left' ? 'animate-[charRead_3s_ease-in-out_infinite]' : 'animate-[charIdle_2.5s_ease-in-out_infinite]',
@@ -36,9 +39,12 @@ export default function MascotCharacter({ side, name, subject, state, onClick, c
 
   return (
     <div 
-      onClick={onClick}
-      className={`relative w-[88px] h-[110px] cursor-pointer transition-all duration-300 ${animationClass} ${className}`}
-      style={{ filter: `drop-shadow(0 0 12px ${body}44)` }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
+      className={`relative w-[88px] h-[110px] cursor-pointer transition-all duration-300 ${animationClass} ${className} group`}
+      style={{ filter: `drop-shadow(0 0 15px ${body}55)` }}
     >
       <svg viewBox="0 0 88 110" className="w-full h-full">
         {/* Ground Shadow */}
@@ -79,26 +85,37 @@ export default function MascotCharacter({ side, name, subject, state, onClick, c
           <circle cx="64" cy="45" r="4" fill="#fb7185" opacity="0.4" />
 
           {/* ARMS / PROPS */}
-          {side === 'left' ? (
-            /* Sparky's Book */
-            <g transform="translate(14, 55) rotate(-10)">
-              <rect x="0" y="0" width="12" height="6" rx="2" fill={body} />
-              <g transform="translate(30, 0) rotate(20)">
-                 <rect x="0" y="0" width="12" height="6" rx="2" fill={body} />
-              </g>
-              {/* The Book */}
-              <g transform="translate(10, -5)">
-                <rect x="0" y="0" width="28" height="18" rx="2" fill="white" stroke={body} strokeWidth="1" />
-                <line x1="14" y1="2" x2="14" y2="16" stroke={body} strokeWidth="1" />
-                <line x1="4" y1="6" x2="10" y2="6" stroke="#94a3b8" strokeWidth="1" />
-                <line x1="4" y1="10" x2="10" y2="10" stroke="#94a3b8" strokeWidth="1" />
-                <line x1="18" y1="6" x2="24" y2="6" stroke="#94a3b8" strokeWidth="1" />
-                <line x1="18" y1="10" x2="24" y2="10" stroke="#94a3b8" strokeWidth="1" />
+          {isSparkyStyle ? (
+            /* Crown + Book Style (Sparky/Atlas/Lexie model) */
+            <g>
+              {/* Star Crown */}
+              <path d="M 44 2 L 47 10 L 55 10 L 49 16 L 51 24 L 44 19 L 37 24 L 39 16 L 33 10 L 41 10 Z" fill="#fbbf24" stroke="#d97706" strokeWidth="1" />
+              
+              {/* Hands holding the Book */}
+              <g transform="translate(14, 55) rotate(-10)">
+                <rect x="0" y="0" width="12" height="6" rx="2" fill={body} />
+                <g transform="translate(30, 0) rotate(20)">
+                   <rect x="0" y="0" width="12" height="6" rx="2" fill={body} />
+                </g>
+                {/* The Book */}
+                <g transform="translate(10, -5)">
+                  <rect x="0" y="0" width="28" height="18" rx="2" fill="white" stroke={body} strokeWidth="1" />
+                  <line x1="14" y1="2" x2="14" y2="16" stroke={body} strokeWidth="1" />
+                  <line x1="4" y1="6" x2="10" y2="6" stroke="#94a3b8" strokeWidth="1" />
+                  <line x1="4" y1="10" x2="10" y2="10" stroke="#94a3b8" strokeWidth="1" />
+                  <line x1="18" y1="6" x2="24" y2="6" stroke="#94a3b8" strokeWidth="1" />
+                  <line x1="18" y1="10" x2="24" y2="10" stroke="#94a3b8" strokeWidth="1" />
+                </g>
               </g>
             </g>
           ) : (
-            /* Nova's Pom-poms */
+            /* Nova's original Pom-pom style (Variant with Ears) */
             <g>
+              {/* Cat Ears */}
+              <path d="M 22 18 L 12 5 L 32 15 Z" fill={body} />
+              <path d="M 66 18 L 76 5 L 56 15 Z" fill={body} />
+              
+              {/* Pom-poms */}
               <g transform="translate(10, 65) rotate(-20)">
                 <rect x="0" y="0" width="8" height="6" rx="2" fill={body} />
                 <circle cx="0" cy="0" r="4" fill="#10b981" />
@@ -113,22 +130,10 @@ export default function MascotCharacter({ side, name, subject, state, onClick, c
               </g>
             </g>
           )}
-
-          {/* Details (Crown / Ears) */}
-          {side === 'left' ? (
-             /* Crown / Star */
-             <path d="M 44 2 L 47 10 L 55 10 L 49 16 L 51 24 L 44 19 L 37 24 L 39 16 L 33 10 L 41 10 Z" fill="#fbbf24" stroke="#d97706" strokeWidth="1" />
-          ) : (
-            /* Cat Ears */
-            <g>
-              <path d="M 22 18 L 12 5 L 32 15 Z" fill={body} />
-              <path d="M 66 18 L 76 5 L 56 15 Z" fill={body} />
-            </g>
-          )}
         </g>
       </svg>
       
-      {/* Subject Name Label (Optional, for better UX) */}
+      {/* Subject Name Label (Visible on Hover or forced) */}
       <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-black text-white/30 uppercase tracking-[0.2em] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
         {name}
       </span>
