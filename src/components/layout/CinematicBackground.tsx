@@ -13,7 +13,7 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
 
   useEffect(() => {
     // Generate stars
-    const newStars = Array.from({ length: 60 }, (_, i) => ({
+    const newStars = Array.from({ length: 150 }, (_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
@@ -56,47 +56,56 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
       
       {/* AURORA ORBS */}
       <div 
-        className="absolute w-[900px] h-[900px] rounded-full mix-blend-screen opacity-50 blur-[100px] max-w-full animate-orb1"
+        className="absolute w-[700px] h-[700px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb1 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(88,28,220,0.22) 0%, transparent 70%)',
-          top: '-20%',
-          left: '-10%',
-        }}
-      />
-      <div 
-        className="absolute w-[700px] h-[700px] rounded-full mix-blend-screen opacity-50 blur-[100px] max-w-full animate-orb2"
-        style={{
-          background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(88,28,220,0.18) 0%, transparent 70%)',
           top: '-10%',
-          right: '-10%',
+          left: '-5%',
         }}
       />
       <div 
-        className="absolute w-[500px] h-[500px] rounded-full mix-blend-screen opacity-50 blur-[100px] max-w-full animate-orb3"
+        className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb2 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)',
-          bottom: '-10%',
-          left: '30%',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)',
+          top: '5%',
+          right: '-5%',
+        }}
+      />
+      <div 
+        className="absolute w-[500px] h-[500px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb3 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(236,72,153,0.09) 0%, transparent 70%)',
+          bottom: '10%',
+          left: '25%',
         }}
       />
 
       {/* SVG PERSPECTIVE GRID */}
-      <div className="absolute inset-0 preserve-3d" style={{ perspective: '1000px' }}>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ perspective: '1000px' }}>
         <div 
-          className="absolute w-full h-[150%] bottom-0 transform-gpu animate-gridPulse"
+          className="absolute w-[200%] h-[200%] left-[-50%] bottom-[-50%] animate-gridPulse opacity-5"
           style={{
-            transform: 'rotateX(75deg) translateY(100px) translateZ(-200px)',
-            transformOrigin: 'bottom center',
-            backgroundSize: '60px 60px',
+            transform: 'rotateX(60deg)',
+            transformOrigin: 'center center',
             backgroundImage: `
-              linear-gradient(to right, rgba(139,92,246,0.35) 0.5px, transparent 0.5px),
-              linear-gradient(to bottom, rgba(139,92,246,0.35) 0.5px, transparent 0.5px)
+              linear-gradient(to right, rgba(139,92,246,0.25) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(139,92,246,0.25) 1px, transparent 1px)
             `,
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 60%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 20%, black 50%, transparent 100%)',
+            backgroundSize: '60px 60px',
+            maskImage: 'linear-gradient(to top, black 30%, transparent 80%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 30%, transparent 80%)',
           }}
         />
       </div>
+
+      {/* HORIZONTAL SCAN LINE */}
+      <div 
+        className="absolute w-full h-[2px] animate-scanLine pointer-events-none opacity-20"
+        style={{
+          background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.12) 40%, rgba(16,185,129,0.08) 60%, transparent)',
+          zIndex: 10
+        }}
+      />
 
       {/* JS STAR FIELD */}
       {stars.map(s => (
@@ -128,15 +137,6 @@ export default function CinematicBackground({ subject = 'science' }: Props) {
           }}
         />
       ))}
-
-      {/* SCAN LINE */}
-      <div 
-        className="absolute top-0 left-0 w-full h-[2px] animate-scanLine"
-        style={{
-          background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.5), rgba(45,212,191,0.5), transparent)'
-        }}
-      />
-
     </div>
   );
 }

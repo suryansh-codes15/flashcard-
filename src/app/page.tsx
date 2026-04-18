@@ -89,7 +89,7 @@ export default function LandingPage() {
     <div className="relative min-h-[calc(100vh-64px)] overflow-hidden">
       
       {/* 🌌 HERO SECTION */}
-      <section className="relative px-6 pt-24 pb-32 text-center max-w-6xl mx-auto flex flex-col items-center">
+      <section className="relative px-6 pt-24 pb-16 text-center max-w-6xl mx-auto flex flex-col items-center">
 
         {/* Global Sparkle Dots */}
         {sparkles.map((s, i) => (
@@ -137,14 +137,14 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-up">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-antigravity">
             <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md">
               <span className="text-sm">🧠</span>
               <span className="text-xs font-bold text-white uppercase tracking-wider">2.4M cards reviewed</span>
             </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md">
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-full backdrop-blur-md shadow-[0_0_20px_rgba(249,115,22,0.15)]">
               <span className="text-sm">🔥</span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">14 avg streak</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">14 DAY STREAK</span>
             </div>
             <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md">
               <span className="text-sm">⭐</span>
@@ -156,17 +156,17 @@ export default function LandingPage() {
             </div>
           </div>
           
-          <div className="flex items-end justify-center w-full gap-8">
-            <div className="hidden md:flex flex-col items-center gap-2 cursor-pointer" onClick={() => handleMascotClick('sparky')}>
-               <MascotCharacter subject="science" side="left" name="Sparky" state={sparkyState} className="w-24 h-24 filter drop-shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-transform hover:scale-110" />
-               <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest animate-pulse">Click me!</p>
+          <div className="flex items-end justify-center w-full gap-8 mt-12">
+            <div className="hidden md:flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('sparky')}>
+               <MascotCharacter subject="science" side="left" name="Sparky" state={sparkyState} className="w-28 h-28 filter drop-shadow-[0_0_25px_rgba(139,92,246,0.25)] transition-all group-hover:scale-110" />
+               <div className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-[9px] font-black text-purple-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Sparky</div>
             </div>
             
             <HeroCard3D />
             
-            <div className="hidden md:flex flex-col items-center gap-2 cursor-pointer" onClick={() => handleMascotClick('nova')}>
-               <MascotCharacter subject="math" side="right" name="Nova" state={novaState} className="w-24 h-24 filter drop-shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-transform hover:scale-110" />
-               <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest animate-pulse">Click me!</p>
+            <div className="hidden md:flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('nova')}>
+               <MascotCharacter subject="math" side="right" name="Nova" state={novaState} className="w-28 h-28 filter drop-shadow-[0_0_25px_rgba(16,185,129,0.25)] transition-all group-hover:scale-110" />
+               <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-black text-emerald-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Nova</div>
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export default function LandingPage() {
       </section>
 
       {/* ✨ FEATURE CARDS */}
-      <section className="py-32 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="pt-16 pb-32 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { 
             icon: Brain, 

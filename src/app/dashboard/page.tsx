@@ -18,14 +18,15 @@ function getGreeting(): string {
   return 'Still at it, Suryansh! 🌙';
 }
 
-function StatCard({ label, value, delay }: { label: string; value: string | number; delay: string }) {
+function StatCard({ label, value, delay, color = 'border-purple-500' }: { label: string; value: string | number; delay: string; color?: string }) {
   return (
     <div 
-      className="p-6 rounded-2xl flex flex-col justify-center bg-surface border border-white/5 shadow-2xl animate-fade-up"
-      style={{ animationDelay: delay, animationFillMode: 'both', background: '#1a1040' }}
+      className={`p-6 rounded-2xl flex flex-col justify-center bg-[#1a1040] border-t-4 ${color} border-l border-r border-b border-white/5 shadow-2xl animate-fade-up relative overflow-hidden group`}
+      style={{ animationDelay: delay, animationFillMode: 'both' }}
     >
-      <span className="text-3xl font-black text-white mb-2">{value}</span>
-      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{label}</span>
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <span className="text-3xl font-black text-white mb-2 relative z-10">{value}</span>
+      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest relative z-10">{label}</span>
     </div>
   );
 }
@@ -100,11 +101,23 @@ export default function DashboardPage() {
 
       {/* STATS ROW */}
       {decks.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Total Cards" value={stats.totalCards} delay="0s" />
-          <StatCard label="Accuracy" value={`${stats.accuracy}%`} delay="0.1s" />
-          <StatCard label="Due Now" value={stats.dueNow} delay="0.2s" />
-          <StatCard label="Cards Mastered" value={stats.mastered} delay="0.3s" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <StatCard label="Total Cards" value={stats.totalCards} delay="0s" color="border-purple-500" />
+          <StatCard 
+            label="Accuracy" 
+            value={stats.accuracy > 0 ? `${stats.accuracy}%` : '--'} 
+            delay="0.1s" 
+            color="border-emerald-500" 
+          />
+          <StatCard label="Due Now" value={stats.dueNow} delay="0.2s" color="border-amber-500" />
+          <StatCard label="Cards Mastered" value={stats.mastered} delay="0.3s" color="border-pink-500" />
+        </div>
+      )}
+
+      {stats.accuracy === 0 && stats.totalCards > 0 && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl flex items-center gap-4 animate-fade-in">
+          <span className="text-xl">✨</span>
+          <p className="text-sm text-emerald-400 font-bold">Start studying to track your accuracy and master your decks!</p>
         </div>
       )}
 
@@ -133,7 +146,7 @@ export default function DashboardPage() {
                 <div 
                   key={deck.id}
                   onClick={() => router.push(`/study/${deck.id}`)}
-                  className={`card-hover cursor-pointer p-6 rounded-[22px] bg-gradient-to-br border ${getSubjectColor(getSubjectName(deck.name))} flex flex-col justify-between min-h-[160px]`}
+                  className={`card-hover cursor-pointer p-6 rounded-[22px] bg-gradient-to-br border-l-[6px] border-t border-r border-b border-white/5 ${getSubjectColor(getSubjectName(deck.name))} flex flex-col justify-between min-h-[170px] transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl`}
                 >
                   <div className="flex justify-between items-start mb-4">
                     <span className="text-3xl">{deck.emoji || '📚'}</span>
@@ -157,13 +170,15 @@ export default function DashboardPage() {
 
             <button
               onClick={() => router.push('/upload')}
-              className="flex flex-col items-center justify-center gap-4 h-full min-h-[160px] rounded-[22px] border-2 border-dashed border-white/20 bg-transparent hover:bg-white/5 hover:border-purple-500/50 transition-all group"
+              className="flex flex-col items-center justify-center gap-4 h-full min-h-[170px] rounded-[22px] border-2 border-dashed border-white/10 bg-white/[0.02] hover:bg-white/5 hover:border-purple-500/40 transition-all group relative overflow-hidden"
             >
-              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-purple-600 transition-all">
-                <Plus className="w-6 h-6 text-white/40 group-hover:text-white" />
+              <div className="absolute inset-0 pointer-events-none bg-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-purple-600 transition-all">
+                <div className="absolute inset-0 rounded-full border-2 border-purple-500 opacity-0 group-hover:animate-[pulseRing_1.5s_infinite]" />
+                <Plus className="w-8 h-8 text-white/40 group-hover:text-white" />
               </div>
-              <p className="text-[11px] font-black text-white/50 group-hover:text-white uppercase tracking-widest transition-colors">
-                New Collection
+              <p className="text-[12px] font-black text-white/40 group-hover:text-white uppercase tracking-[0.2em] transition-colors relative z-10">
+                Forge Deck
               </p>
             </button>
           </div>

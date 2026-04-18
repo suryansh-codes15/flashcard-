@@ -26,12 +26,13 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   const [isFinished, setIsFinished] = useState(false);
 
   // States for animations
-  const [sparkyState, setSparkyState] = useState<'idle'|'reading'|'jumping'|'sad'|'dancing'>('reading');
-  const [novaState, setNovaState] = useState<'idle'|'reading'|'jumping'|'sad'|'dancing'>('dancing');
+  const [sparkyState, setSparkyState] = useState<MascotState>('reading');
+  const [novaState, setNovaState] = useState<MascotState>('dancing');
   const [shakeCard, setShakeCard] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [floatingXP, setFloatingXP] = useState(false);
   const [wrongFlash, setWrongFlash] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const [hydrated, setHydrated] = useState(false);
   const sessionStartedTime = useRef(new Date().toISOString());
@@ -66,8 +67,8 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
 
     // Trigger animations
     if (isCorrect) {
-      setSparkyState('jumping');
       setNovaState('jumping');
+      setSparkyState('dancing'); // Wave replacement
       setShowConfetti(true);
       setFloatingXP(true);
       setTimeout(() => {
@@ -79,15 +80,17 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       }, 1500);
     } else {
       setSparkyState('sad');
+      setNovaState('reading'); // Nova shake/reading
       setShakeCard(true);
       setWrongFlash(true);
       setTimeout(() => {
         setSparkyState('reading');
+        setNovaState('dancing');
         setShakeCard(false);
         setWrongFlash(false);
-      }, 800);
+      }, 1000);
       // Wait a bit before next card
-      setTimeout(() => nextCard(), 1500);
+      setTimeout(() => nextCard(), 1800);
     }
 
   }, [cards, currentIndex, isFinished, rateCard]);
@@ -96,6 +99,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     if (currentIndex < cards.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setFlipped(false);
+      setShowExplanation(false);
     } else {
       finishSession();
     }
@@ -191,7 +195,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     return 'text-3xl sm:text-4xl leading-none font-black text-emerald-400';
   };
 
-  const shakeClass = shakeCard ? 'animate-[shake_0.4s_ease-in-out_2]' : '';
+  const shakeClass = shakeCard ? 'animate-[cardShake_0.4s_ease-in-out_2]' : '';
 
   return (
     <div className="min-h-screen flex flex-col items-center overflow-hidden">
@@ -250,26 +254,50 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         {/* Card Stage with Mascots */}
         <div className="flex items-center justify-center gap-4 md:gap-16 relative perspective-2000">
           
-          {/* Confetti Burst */}
+          {/* Upgrade Celebration: Side Emitters */}
           {showConfetti && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-50">
-               {Array.from({ length: 24 }).map((_, i) => {
-                 const angle = (i / 24) * 360 + (Math.random() * 15);
-                 const dist = 100 + Math.random() * 150;
-                 return (
-                   <div
-                     key={i}
-                     className="absolute text-2xl animate-confetti-burst"
-                     style={{
-                       '--dx': `${Math.cos(angle * Math.PI / 180) * dist}px`,
-                       '--dy': `${Math.sin(angle * Math.PI / 180) * dist}px`,
-                       animationDelay: `${Math.random() * 0.2}s`,
-                     } as any}
-                   >
-                     {['✨', '🪙', '🚀', '🔥'][Math.floor(Math.random()*4)]}
-                   </div>
-                 );
-               })}
+            <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+              {/* Left Emitter */}
+              <div className="absolute bottom-0 left-0 w-32 h-32 flex items-center justify-center">
+                 {Array.from({ length: 40 }).map((_, i) => {
+                   const angle = -45 + (Math.random() * 70); // Aiming up and right
+                   const dist = 400 + Math.random() * 600;
+                   return (
+                     <div
+                       key={`left-${i}`}
+                       className="absolute text-3xl animate-confetti-up"
+                       style={{
+                         '--dx': `${Math.cos(angle * Math.PI / 180) * dist}px`,
+                         '--dy': `-${Math.sin(angle * Math.PI / 180) * dist}px`,
+                         animationDelay: `${Math.random() * 0.4}s`,
+                       } as any}
+                     >
+                       {['✨', '⭐️', '🪙', '🎊', '🎉', '🚀', '🌈'][Math.floor(Math.random()*7)]}
+                     </div>
+                   );
+                 })}
+              </div>
+              
+              {/* Right Emitter */}
+              <div className="absolute bottom-0 right-0 w-32 h-32 flex items-center justify-center">
+                 {Array.from({ length: 40 }).map((_, i) => {
+                   const angle = 110 + (Math.random() * 70); // Aiming up and left
+                   const dist = 400 + Math.random() * 600;
+                   return (
+                     <div
+                       key={`right-${i}`}
+                       className="absolute text-3xl animate-confetti-up"
+                       style={{
+                         '--dx': `${Math.cos(angle * Math.PI / 180) * dist}px`,
+                         '--dy': `-${Math.sin(angle * Math.PI / 180) * dist}px`,
+                         animationDelay: `${Math.random() * 0.4}s`,
+                       } as any}
+                     >
+                       {['✨', '⭐️', '🪙', '🎊', '🎉', '🚀', '🌈'][Math.floor(Math.random()*7)]}
+                     </div>
+                   );
+                 })}
+              </div>
             </div>
           )}
 
@@ -281,69 +309,115 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
             </div>
           </div>
 
-          {/* 3D Flashcard Wrapper */}
-          <div className={`relative w-[340px] sm:w-[500px] min-h-[340px] sm:min-h-[400px] preserve-3d z-20 ${shakeClass} cursor-pointer`}
-            onClick={() => setFlipped(prev => !prev)}
-            style={{ 
-              animation: shakeCard ? 'none' : 'cardFloat 4s ease-in-out infinite alternate',
-            }}
-          >
-            {/* Holo Border */}
+          {/* 3D Flashcard Container with Antigravity layers */}
+          <div className="relative group">
+            {/* Ground Shadow */}
             <div 
-              className="absolute inset-[-6px] rounded-[28px] animate-holo pointer-events-none"
-              style={{ 
-                background: 'linear-gradient(270deg, #7c3aed, #06b6d4, #10b981, #f59e0b, #ec4899, #7c3aed)',
-                backgroundSize: '400% 400%',
-                transform: 'translateZ(-10px)'
-              }}
+              className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-48 h-6 bg-black/40 blur-xl rounded-full transition-all duration-1000 animate-[shadowPulse_4s_ease-in-out_infinite]"
+              style={{ zIndex: 0 }}
             />
 
-            {/* Card Body */}
-            <div 
-              className="absolute inset-0 w-full h-full preserve-3d transition-transform duration-500 ease-out shadow-[0_30px_90px_-20px_rgba(0,0,0,0.9)]"
+            {/* Orbiting Stars */}
+            <div className="absolute inset-0 pointer-events-none z-10">
+              {[...Array(6)].map((_, i) => (
+                <div 
+                  key={i}
+                  className="absolute animate-pop-in"
+                  style={{
+                    top: '50%',
+                    left: '50%',
+                    transform: `rotate(${i * 60}deg) translateY(-280px)`,
+                    animationDelay: `${i * 0.1}s`
+                  }}
+                >
+                  <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse shadow-[0_0_10px_#fbbf24]" />
+                </div>
+              ))}
+            </div>
+
+            {/* Main Wrapper */}
+            <div className={`relative w-[340px] sm:w-[500px] min-h-[380px] sm:min-h-[440px] preserve-3d z-20 ${shakeClass} cursor-pointer`}
+              onClick={() => {
+                setFlipped(prev => !prev);
+                if (!flipped) { /* Flip sound or speed up could go here */ }
+              }}
               style={{ 
-                transform: `${flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'} translateZ(0px)`,
-                transformStyle: 'preserve-3d'
+                animation: shakeCard ? 'none' : 'cardFloat 4s ease-in-out infinite',
               }}
             >
-              {/* Front Face */}
+              {/* Layer 1: Ambient Glow */}
               <div 
-                className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#0f0a1e] to-[#1a1040] rounded-[22px] border border-white/5 flex flex-col z-10 overflow-hidden" 
-                style={{ transform: 'rotateY(0deg) translateZ(1px)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                className="absolute inset-[-16px] rounded-[32px] animate-glow pointer-events-none opacity-40"
+                style={{ 
+                  background: 'radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%)',
+                  transform: 'translateZ(-20px)'
+                }}
+              />
+
+              {/* Layer 2: Holo Ring */}
+              <div 
+                className="absolute inset-[-3px] rounded-[28px] animate-holo pointer-events-none"
+                style={{ 
+                  background: 'linear-gradient(270deg, #7c3aed, #06b6d4, #10b981, #f59e0b, #ec4899, #7c3aed)',
+                  backgroundSize: '400% 400%',
+                  transform: 'translateZ(-5px)'
+                }}
+              />
+
+              {/* Floating +XP Text */}
+              {floatingXP && (
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-[xpFloat_1.5s_ease-out_forwards]">
+                  <span className="text-2xl font-black text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">+20 XP</span>
+                </div>
+              )}
+
+              {/* Card Body */}
+              <div 
+                className="absolute inset-0 w-full h-full preserve-3d transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-[0_40px_100px_-30px_rgba(0,0,0,0.8)]"
+                style={{ 
+                  transform: `${flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'}`,
+                  transformStyle: 'preserve-3d'
+                }}
               >
-                <div className="flex-1 p-12 flex flex-col relative z-20 overflow-y-auto custom-scrollbar-thin">
-                  <div className="my-auto w-full text-center">
-                    <h2 className={`text-white drop-shadow-md leading-tight ${getFrontFontSize(card.front)}`}>
-                      {card.front}
-                    </h2>
-                    {card.insight && (
-                      <div className="mt-8 pt-8 border-t border-white/5 opacity-40">
-                         <p className="text-[13px] text-gray-400 italic font-medium max-w-[80%] mx-auto">
-                           {card.insight}
-                         </p>
-                      </div>
-                    )}
+                {/* Front Face */}
+                <div 
+                  className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#0f0a1e] to-[#120a2e] rounded-[24px] border border-white/5 flex flex-col z-10 overflow-hidden" 
+                  style={{ transform: 'rotateY(0deg) translateZ(1px)' }}
+                >
+                  <div className="flex-1 p-10 flex flex-col relative z-20">
+                    <div className="my-auto w-full text-center">
+                      <h2 className={`text-white drop-shadow-lg leading-tight selection:bg-purple-500/30 ${getFrontFontSize(card.front)}`}>
+                        {card.front}
+                      </h2>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Back Face */}
-              <div 
-                className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#0a2c1c] to-[#064e40] rounded-[22px] border border-emerald-500/20 flex flex-col z-10 overflow-hidden" 
-                style={{ transform: 'rotateY(180deg) translateZ(1px)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-              >
-                <div className="flex-1 p-12 flex flex-col relative z-20 overflow-y-auto custom-scrollbar-thin">
-                  <div className="my-auto w-full text-center">
-                    <h2 className={`font-black drop-shadow-[0_0_20px_rgba(110,231,183,0.2)] leading-tight ${getBackFontSize(card.back)}`}>
+                {/* Back Face */}
+                <div 
+                  className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#0a2c1c] via-[#052216] to-[#041a10] rounded-[24px] border border-emerald-500/30 flex flex-col z-10 overflow-hidden" 
+                  style={{ transform: 'rotateY(180deg) translateZ(1px)' }}
+                >
+                  <div className="flex-1 p-10 flex flex-col items-center justify-center relative z-20">
+                    <h2 className={`font-black drop-shadow-[0_0_25px_rgba(110,231,183,0.3)] leading-tight text-center selection:bg-emerald-500/30 ${getBackFontSize(card.back)}`}>
                       {card.back}
                     </h2>
-                    {card.concept && (
-                      <div className="mt-8 pt-8 border-t border-emerald-500/10 opacity-70">
-                         <p className="text-[13px] text-emerald-100/70 italic font-medium max-w-[85%] mx-auto leading-relaxed">
-                           {card.concept}
+
+                    {/* Bold Explanation Toggle */}
+                    <div className="mt-8 pt-6 border-t border-emerald-500/10 w-full flex flex-col items-center gap-4">
+                       <button 
+                         onClick={(e) => { e.stopPropagation(); setShowExplanation(!showExplanation); }}
+                         className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest hover:bg-emerald-500/20 transition-all"
+                       >
+                         {showExplanation ? 'Hide Insight' : 'Why?'}
+                       </button>
+                       
+                       {showExplanation && (
+                         <p className="text-[13px] text-emerald-100/60 font-medium text-center leading-relaxed animate-fade-in max-w-[90%]">
+                           {card.concept || card.insight || "This concept explores the core principles behind the answer."}
                          </p>
-                      </div>
-                    )}
+                       )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -352,8 +426,8 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
 
           {/* Nova / Hype-Bot */}
           <div className="hidden md:flex flex-col items-center gap-3">
-            <MascotCharacter subject="science" side="right" name="Nova" state={novaState} className="w-40 h-40 drop-shadow-[0_0_30px_rgba(219,39,119,0.2)]" />
-            <div className="px-4 py-1.5 bg-pink-500/10 border border-pink-500/20 rounded-full text-[10px] font-black text-pink-400 uppercase tracking-widest backdrop-blur-md">
+            <MascotCharacter subject="math" side="right" name="Nova" state={novaState} className="w-40 h-40 drop-shadow-[0_0_35px_rgba(16,185,129,0.2)]" />
+            <div className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-black text-emerald-400 uppercase tracking-widest backdrop-blur-md">
               HYPE-BOT
             </div>
           </div>
