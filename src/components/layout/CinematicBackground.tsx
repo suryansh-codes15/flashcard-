@@ -13,13 +13,13 @@ function CinematicBackgroundComponent({ subject = 'science' }: Props) {
 
   useEffect(() => {
     // Generate stars - stationary, only once on mount
-    const newStars = Array.from({ length: 150 }, (_, i) => ({
+    const newStars = Array.from({ length: 250 }, (_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
-      delay: `${Math.random() * 4}s`,
+      delay: `${Math.random() * 5}s`,
       size: `${1 + Math.random() * 2}px`,
-      duration: `${1.5 + Math.random() * 2.5}s`
+      duration: `${3 + Math.random() * 4}s`
     }));
     setStars(newStars);
 
@@ -54,83 +54,121 @@ function CinematicBackgroundComponent({ subject = 'science' }: Props) {
 
   return (
     <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#050510]">
+      {/* 🎭 LAYER 0: GRAINY NOISE OVERLAY */}
+      <div className="noise-overlay" />
       
-      {/* AURORA ORBS */}
+      {/* 🎭 LAYER 1: CINEMATIC VIGNETTE (Post-process) */}
       <div 
-        className="absolute w-[700px] h-[700px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb1 pointer-events-none"
+        className="absolute inset-0 z-[10] pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(88,28,220,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle at center, transparent 30%, rgba(5,5,16,0.92) 100%)',
+        }}
+      />
+
+      {/* 🎭 LAYER 1.5: REFINED HORIZON GLOW (Integrated with vanishing point) */}
+      <div 
+        className="absolute top-[44%] left-1/2 -translate-x-1/2 w-[120%] h-[150px] z-[3] pointer-events-none opacity-[0.4]"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.5) 0%, rgba(124,58,237,0.1) 40%, transparent 80%)',
+          filter: 'blur(35px)',
+          transform: 'translateX(-50%)',
+        }}
+      />
+      
+      {/* AURORA ORBS (Atmosphere Base) */}
+      <div 
+        className="absolute w-[800px] h-[800px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb1 pointer-events-none z-[1]"
+        style={{
+          background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)',
           top: '-10%',
           left: '-5%',
         }}
       />
       <div 
-        className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb2 pointer-events-none"
+        className="absolute w-[800px] h-[800px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb2 pointer-events-none z-[1]"
         style={{
-          background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%)',
           top: '5%',
           right: '-5%',
-          display: subject === 'science' || subject === 'math' ? 'block' : 'none' // Conditional rendering for performance
         }}
       />
       <div 
-        className="absolute w-[500px] h-[500px] rounded-full mix-blend-screen opacity-100 blur-[100px] max-w-full animate-orb3 pointer-events-none"
+        className="absolute w-[600px] h-[600px] rounded-full mix-blend-screen opacity-100 blur-[90px] max-w-full animate-orb3 pointer-events-none z-[1]"
         style={{
-          background: 'radial-gradient(circle, rgba(236,72,153,0.09) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)',
           bottom: '10%',
           left: '25%',
         }}
       />
 
-      {/* SVG PERSPECTIVE GRID */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ perspective: '1000px' }}>
+      {/* 🔮 LAYER 2: 3D MOVING BRIDGE GRID */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-[4]" style={{ perspective: '1000px' }}>
         <div 
-          className="absolute w-[200%] h-[200%] left-[-50%] bottom-[-50%] animate-gridPulse opacity-5"
+          className="absolute w-[200%] h-[200%] left-[-50%] bottom-[-50%] animate-grid-flow will-change-transform"
           style={{
-            transform: 'rotateX(60deg)',
+            transform: 'rotateX(74deg)',
             transformOrigin: 'center center',
-            backgroundImage: `
-              linear-gradient(to right, rgba(139,92,246,0.25) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(139,92,246,0.25) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-            maskImage: 'linear-gradient(to top, black 30%, transparent 80%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 30%, transparent 80%)',
+            backfaceVisibility: 'hidden',
           }}
-        />
+        >
+          <svg width="100%" height="100%" className="w-full h-full opacity-[0.9]" shapeRendering="geometricPrecision">
+            <defs>
+              <linearGradient id="grid-stroke-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.4" />
+                <stop offset="50%" stopColor="#22d3ee" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#22d3ee" stopOpacity="1" />
+              </linearGradient>
+              <pattern id="bridge-grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse" y="0">
+                <path 
+                   d="M 40 0 L 0 0 0 40" 
+                   fill="none" 
+                   stroke="url(#grid-stroke-grad)" 
+                   strokeWidth="1.2" 
+                   opacity="1" 
+                   strokeLinecap="round" 
+                   style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.7))' }}
+                />
+              </pattern>
+              <linearGradient id="bridge-grid-fade" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="transparent" />
+                <stop offset="20%" stopColor="white" stopOpacity="0.8" />
+                <stop offset="45%" stopColor="white" />
+                <stop offset="100%" stopColor="white" />
+              </linearGradient>
+              <mask id="bridge-grid-mask">
+                <rect width="100%" height="100%" fill="url(#bridge-grid-fade)" />
+              </mask>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#bridge-grid-pattern)" mask="url(#bridge-grid-mask)" />
+          </svg>
+        </div>
       </div>
 
-      {/* HORIZONTAL SCAN LINE */}
-      <div 
-        className="absolute w-full h-[2px] animate-scanLine pointer-events-none opacity-20"
-        style={{
-          background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.12) 40%, rgba(16,185,129,0.08) 60%, transparent)',
-          zIndex: 10
-        }}
-      />
 
-      {/* JS STAR FIELD - Static rendering */}
+      {/* JS STAR FIELD (Distant) */}
       {stars.map(s => (
-        <div
-          key={s.id}
-          className="absolute bg-white rounded-full animate-starTwinkle"
-          style={{
-            left: s.left,
-            top: s.top,
-            width: s.size,
-            height: s.size,
-            animationDuration: s.duration,
-            animationDelay: s.delay,
-            opacity: 0,
-          }}
-        />
+          <div
+            key={s.id}
+            className="absolute bg-white rounded-full animate-starTwinkle z-[2]"
+            style={{
+              left: s.left,
+              top: s.top,
+              width: s.size,
+              height: s.size,
+              animationDuration: s.duration,
+              animationDelay: s.delay,
+              opacity: 0.7, 
+              backgroundColor: parseInt(s.left) % 5 === 0 ? '#a78bfa' : parseInt(s.left) % 7 === 0 ? '#22d3ee' : '#fff',
+              boxShadow: '0 0 4px rgba(255,255,255,0.4)',
+            }}
+          />
       ))}
 
-      {/* RISING PARTICLES - Capped at 20 */}
+      {/* RISING PARTICLES (Medium Distance) */}
       {particles.map(p => (
         <div
           key={p.id}
-          className={`absolute bottom-[-20px] rounded-full opacity-0 animate-particleRise ${p.color}`}
+          className={`absolute bottom-[-20px] rounded-full opacity-0 animate-particleRise ${p.color} z-[5]`}
           style={{
             left: p.left,
             width: '3px',

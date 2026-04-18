@@ -18,11 +18,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="custom-scrollbar">
-      <head>
-        <style>{`
-          body { background-color: #050510 !important; color: white !important; }
-        `}</style>
-      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <CinematicBackground />
         <div className="relative z-10 flex flex-col min-h-screen">

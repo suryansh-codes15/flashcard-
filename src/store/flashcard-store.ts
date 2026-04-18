@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Flashcard, Deck, StudySession, DifficultyLevel } from '@/types';
 import { generateId } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 // SM-2 adjusted algorithm
 function calculateNextReview(card: Flashcard, rating: DifficultyLevel): Partial<Flashcard> {
@@ -46,6 +47,12 @@ interface FlashcardStore {
     flashcards: Flashcard[];
     sessions: StudySession[];
     xp: number;
+    profile: {
+        id: string;
+        name: string;
+        xp: number;
+        streak: number;
+    } | null;
 
     // Deck operations
     addDeck: (deck: Deck) => void;
@@ -75,6 +82,8 @@ interface FlashcardStore {
         level: number;
     };
     getDueCount: (deckId?: string) => number;
+    setProfile: (profile: { id: string; name: string; xp: number; streak: number }) => void;
+    syncWithDB: () => Promise<void>;
 }
 
 export const useFlashcardStore = create<FlashcardStore>()(
@@ -83,7 +92,15 @@ export const useFlashcardStore = create<FlashcardStore>()(
             decks: [],
             flashcards: [],
             sessions: [],
-            xp: 1240, // Initial premium state
+            xp: 1240, 
+            profile: null,
+
+            setProfile: (profile) => set({ profile, xp: profile.xp }),
+
+            syncWithDB: async () => {
+                // This will be implemented fully once DB service is ready
+                // but we add the placeholder for now
+            },
 
             addDeck: (deck) => set((state) => ({ decks: [...state.decks, deck] })),
 
@@ -148,6 +165,24 @@ export const useFlashcardStore = create<FlashcardStore>()(
                     // Award XP for easy/correct cards
                     xp: rating === 'easy' ? state.xp + 10 : state.xp
                 }));
+
+                // SYNC TO DB if profile exists
+                const profile = get().profile;
+                if (profile?.id) {
+                    supabase
+                      .from('flashcards')
+                      .update({
+                        interval: updates.interval,
+                        ease_factor: updates.easeFactor,
+                        next_review_date: updates.nextReviewDate,
+                        review_count: updates.reviewCount,
+                        lapse_count: updates.lapseCount
+                      })
+                      .eq('id', cardId)
+                      .then(({ error }) => {
+                        if (error) console.error('Failed to sync card rating:', error);
+                      });
+                }
             },
 
             addSession: (session) => set((state) => {
@@ -160,11 +195,30 @@ export const useFlashcardStore = create<FlashcardStore>()(
                     ? session.accuracy - lastSession.accuracy 
                     : 0;
 
-                return { 
+                const result = { 
                     sessions: [...state.sessions, { ...session, improvement }],
                     // Award XP: 5 XP per card studied, plus bonus for accuracy
                     xp: (state.xp || 0) + (session.cardsStudied * 5) + (session.accuracy > 80 ? 50 : 0)
                 };
+
+                // SYNC TO DB if profile exists
+                const profile = get().profile;
+                if (profile?.id) {
+                    // Update XP in DB
+                    supabase
+                      .from('profiles')
+                      .update({ total_xp: result.xp })
+                      .eq('id', profile.id)
+                      .then(({ error }) => {
+                        if (error) console.error('Failed to sync session XP:', error);
+                      });
+                    
+                    // Note: We could also create a 'sessions' table if needed, 
+                    // but the user mainly asked for 'decks history'.
+                    // For now, XP sync is enough to show progress.
+                }
+
+                return result;
             }),
 
             getDueCount: (deckId) => {

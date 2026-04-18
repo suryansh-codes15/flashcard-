@@ -11,6 +11,7 @@ import { generateId, getDeckEmoji } from '@/lib/utils';
 import type { GenerationProgress, Flashcard, ClassLevel } from '@/types';
 import MascotCharacter from '@/components/MascotCharacter';
 import SampleLibrary from '@/components/forge/SampleLibrary';
+import { supabase } from '@/lib/supabase';
 
 const MODES = [
   { id: 'concept', label: 'Deep Learning', emoji: '🧠', desc: 'Core concept & definitions', mascot: 'science', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' },
@@ -142,6 +143,60 @@ export default function UploadPage() {
             if (data.cards) setCardCount(data.cards);
           } else if (data.type === 'complete') {
             const cards = data.flashcards as Flashcard[];
+            
+            // SAVE TO SUPABASE if profile exists
+            const profile = useFlashcardStore.getState().profile;
+            if (profile?.id) {
+              try {
+                // 1. Save Deck
+                const { error: deckError } = await supabase
+                  .from('decks')
+                  .insert({
+                    id: deckId,
+                    profile_id: profile.id,
+                    name: deck.name,
+                    description: deck.description,
+                    file_name: deck.fileName,
+                    class_level: deck.classLevel,
+                    template_id: deck.templateId,
+                    emoji: deck.emoji,
+                    card_count: cards.length
+                  });
+                
+                if (deckError) throw deckError;
+
+                // 2. Save Cards
+                const { error: cardsError } = await supabase
+                  .from('flashcards')
+                  .insert(cards.map(c => ({
+                    deck_id: deckId,
+                    front: c.front,
+                    back: c.back,
+                    type: c.type,
+                    difficulty: c.difficulty,
+                    level: c.level,
+                    template_key: c.templateKey,
+                    color_palette: c.colorPalette,
+                    source_context: c.sourceContext,
+                    insight: c.insight,
+                    example: c.example,
+                    mistake: c.mistake,
+                    options: c.options,
+                    correct_answer: c.correctAnswer,
+                    interval: c.interval,
+                    ease_factor: c.easeFactor,
+                    next_review_date: c.nextReviewDate,
+                    review_count: c.reviewCount,
+                    lapse_count: c.lapseCount
+                  })));
+
+                if (cardsError) throw cardsError;
+                console.log('Forge results synced to cloud successfully.');
+              } catch (syncErr) {
+                console.error('Cloud sync failed during forge:', syncErr);
+              }
+            }
+
             addCards(cards);
             setCardCount(cards.length);
             setProgress(100);
@@ -329,7 +384,10 @@ export default function UploadPage() {
                      ))}
                   </div>
                   <button 
-                    onClick={() => router.push('/dashboard')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push('/dashboard');
+                    }}
                     className="mt-6 px-8 py-4 rounded-full bg-emerald-600 text-white font-black z-20 hover:scale-105 active:scale-95 transition-all w-full md:w-auto"
                   >
                     Start studying →
@@ -340,7 +398,15 @@ export default function UploadPage() {
                   <AlertCircle className="w-10 h-10 text-red-500 mb-2" />
                   <p className="text-xl font-black text-rose-400">Forge failed</p>
                   <p className="text-[11px] font-bold text-rose-400/80 uppercase tracking-widest">{error}</p>
-                  <button onClick={() => setStage('idle')} className="mt-4 px-6 py-2 rounded-full border border-red-500/30 text-rose-400 text-[10px] font-black uppercase hover:bg-red-500/10 transition-colors">Try again</button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStage('idle');
+                    }} 
+                    className="mt-4 px-6 py-2 rounded-full border border-red-500/30 text-rose-400 text-[10px] font-black uppercase hover:bg-red-500/10 transition-colors"
+                  >
+                    Try again
+                  </button>
                 </div>
               )}
             </div>

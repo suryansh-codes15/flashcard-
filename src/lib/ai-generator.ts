@@ -102,9 +102,18 @@ const TYPE_TO_PALETTE: Record<string, ColorPalette> = {
   application: 'emerald_teal',
 };
 
-async function generateCardsForChunk(content: string, templateId: string, classLevel: ClassLevel): Promise<RawCard[]> {
+async function generateCardsForChunk(
+  content: string, 
+  templateId: string, 
+  classLevel: ClassLevel,
+  targetCount: number = 5
+): Promise<RawCard[]> {
   const template = TEMPLATES[templateId] || TEMPLATES.concept;
-  const prompt = `${template}\n\nCONTENT:\n${content}`;
+  
+  // Specific instruction for card count
+  const countInstruction = `CRITICAL: You MUST generate EXACTLY ${targetCount} unique flashcards for this content. No more, no less.`;
+  
+  const prompt = `${template}\n\n${countInstruction}\n\nCONTENT:\n${content}`;
 
   const completion = await groq.chat.completions.create({
     messages: [
@@ -120,7 +129,10 @@ async function generateCardsForChunk(content: string, templateId: string, classL
   const text = completion.choices[0]?.message?.content || '{}';
   const parsed = JSON.parse(text);
   const cards = parsed.cards || (Array.isArray(parsed) ? parsed : []);
-  return cards.filter((c: RawCard) => c.front && c.back);
+  
+  // Force limit in case AI ignores instruction
+  const filtered = cards.filter((c: RawCard) => c.front && c.back);
+  return filtered.slice(0, targetCount);
 }
 
 function deduplicateCards(cards: RawCard[]): RawCard[] {
@@ -143,6 +155,10 @@ export async function generateFlashcards(
 ): Promise<Flashcard[]> {
   const allRawCards: RawCard[] = [];
 
+  // Determine total target count (Default to 20 to be safe within [10, 25])
+  const TOTAL_TARGET = 20;
+  const targetPerChunk = Math.max(2, Math.floor(TOTAL_TARGET / chunks.length));
+
   // Process chunks in parallel with a smart concurrency limit
   const CONCURRENCY_LIMIT = 3;
   const chunkResults: RawCard[][] = new Array(chunks.length);
@@ -163,7 +179,8 @@ export async function generateFlashcards(
     }
 
     try {
-      const rawCards = await generateCardsForChunk(chunk.content, templateId, classLevel);
+      // Pass the distributed target count
+      const rawCards = await generateCardsForChunk(chunk.content, templateId, classLevel, targetPerChunk);
       chunkResults[i] = rawCards;
     } catch (err) {
       console.error(`Chunk ${i + 1} failed:`, err);
@@ -182,10 +199,18 @@ export async function generateFlashcards(
     if (cards) allRawCards.push(...cards);
   }
 
-  const deduplicated = deduplicateCards(allRawCards);
+  let finalRawCards = deduplicateCards(allRawCards);
+
+  // FINAL CONSTRAINT ENFORCEMENT: 10 to 25
+  if (finalRawCards.length > 25) {
+    finalRawCards = finalRawCards.slice(0, 25);
+  }
+  // (If less than 10, we keep what we have as forcing AI to hallucinate more from 
+  // small text is dangerous, but usually it generates enough)
+
   const now = new Date().toISOString();
 
-  const flashcards: Flashcard[] = deduplicated.map((rc, idx) => {
+  const flashcards: Flashcard[] = finalRawCards.map((rc, idx) => {
     let cardType = (rc.type?.toLowerCase() as CardType) || 'concept';
     
     // Safety Enforcer: If options exist, it MUST be an MCQ for the UI to render properly

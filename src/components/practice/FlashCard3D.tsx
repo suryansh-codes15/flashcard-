@@ -101,7 +101,7 @@ export default function FlashCard3D({
             <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest hidden sm:block">tap to flip ↕</span>
           </div>
 
-          <div className="flex-1 flex flex-col justify-center gap-4 sm:gap-6 relative z-20 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 flex flex-col justify-start pt-4 gap-4 sm:gap-6 relative z-20 overflow-y-auto custom-scrollbar">
             <div className="space-y-1">
               <div className="text-[10px] font-black text-purple-500 uppercase tracking-[0.2em]">Question</div>
               <h2 className="text-xl sm:text-2xl font-black text-white leading-tight drop-shadow-lg">
@@ -136,7 +136,7 @@ export default function FlashCard3D({
           style={{ transform: 'rotateY(180deg) translateZ(10px)' }}
         >
           <div className="flex-1 px-2 sm:px-4 py-6 flex flex-col items-center justify-start text-center relative z-20 overflow-y-auto custom-scrollbar">
-            <div className="my-auto w-full flex flex-col items-center gap-6 sm:gap-8">
+            <div className="w-full flex flex-col items-center gap-6 sm:gap-8 pt-4">
               <div className="space-y-4 w-full">
                 <div className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Answer ✅</div>
                 <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-[#6ee7b7] leading-relaxed max-w-[95%] mx-auto drop-shadow-[0_0_15px_rgba(110,231,183,0.3)]">

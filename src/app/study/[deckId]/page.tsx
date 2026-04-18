@@ -378,7 +378,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       </div>
 
       {/* 🃏 MAIN STUDY SCENE */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center relative -mt-12">
+      <div className="flex-1 w-full flex flex-col items-center justify-center relative mt-4">
         
         {/* GAMIFICATION LAYERS */}
         {showConfetti && <ConfettiBurst />}
@@ -393,6 +393,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
           {/* Sparky / GUARDIAN (Left) */}
           <div className="hidden md:flex flex-col items-center gap-4 z-50">
              <MascotCharacter 
+                side="left"
                 subject="science" 
                 name="Sparky" 
                 state={sparkyState} 
@@ -426,6 +427,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
           {/* Nova / HYPE-BOT (Right) */}
           <div className="hidden md:flex flex-col items-center gap-4 z-50">
              <MascotCharacter 
+                side="right"
                 subject="math" 
                 name="Nova" 
                 state={novaState} 
@@ -438,7 +440,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         </div>
 
         {/* 🎮 BOTTOM CONTROLS AREA */}
-        <div className="w-full max-w-4xl flex flex-col items-center gap-8 pb-12 z-40 mt-16 sm:mt-24">
+        <div className="w-full max-w-4xl flex flex-col items-center gap-4 pb-12 z-40 mt-4">
             
             {/* Navigation Row */}
             <div className="flex items-center gap-4 bg-black/20 backdrop-blur-md px-6 py-2 rounded-full border border-white/5 shadow-2xl">
