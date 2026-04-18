@@ -51,7 +51,8 @@ export interface Flashcard {
   colorPalette?: ColorPalette;
   tags?: string[];
   sourceContext?: string;
-  insight?: string;    // Deep-dive insight from AI
+  insight?: string;    // Deep-dive insight from AI (Front)
+  concept?: string;    // Conceptual breakdown (Back)
   mistake?: string;    // Common mistake/gotcha
   example?: string;    // Real-world application example
   // MCQ specific
