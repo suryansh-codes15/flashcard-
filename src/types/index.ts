@@ -128,3 +128,5 @@ export interface GenerationProgress {
 export type TutorAction = 'simpler' | 'example' | 'importance' | 'harder' | 'misunderstanding';
 
 export type MascotSubject = 'math' | 'science' | 'geography' | 'history' | 'language';
+
+export type MascotState = 'idle' | 'reading' | 'dancing' | 'jumping' | 'sad';

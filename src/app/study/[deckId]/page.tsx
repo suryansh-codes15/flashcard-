@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import MascotCharacter from '@/components/MascotCharacter';
 import { ArrowLeft, Flame, Zap, Trophy, Lightbulb, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Flashcard, DifficultyLevel } from '@/types';
+import type { Flashcard, DifficultyLevel, MascotState } from '@/types';
 
 export default function StudyPage({ params }: { params: Promise<{ deckId: string }> }) {
   const { deckId } = use(params);

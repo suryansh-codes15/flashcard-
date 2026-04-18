@@ -1,8 +1,6 @@
 'use client';
 
-import { MascotSubject } from '../types';
-
-export type MascotState = 'idle' | 'reading' | 'dancing' | 'jumping' | 'sad';
+import { MascotSubject, MascotState } from '../types';
 
 interface Props {
   side: 'left' | 'right';
