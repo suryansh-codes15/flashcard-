@@ -60,8 +60,9 @@ export default function LandingPage() {
   const [globalStats, setGlobalStats] = useState<{
     totalDecks: number;
     totalCards: number;
-    estimatedReviews: number;
+    totalReviews: number;
     activeStreaks: number;
+    retentionRate: number;
   } | null>(null);
 
   const [sparkles, setSparkles] = useState<{ width: string; height: string; top: string; left: string; delay: number }[]>([]);
@@ -159,23 +160,35 @@ export default function LandingPage() {
             <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md min-w-[180px]">
               <span className="text-sm">🧠</span>
               <span className="text-xs font-bold text-white uppercase tracking-wider">
-                {globalStats ? `${(globalStats.estimatedReviews / 1000000).toFixed(1)}M` : '2.4M'} cards reviewed
+                {globalStats 
+                  ? globalStats.totalReviews >= 1000000 
+                    ? `${(globalStats.totalReviews / 1000000).toFixed(1)}M` 
+                    : globalStats.totalReviews >= 1000 
+                      ? `${(globalStats.totalReviews / 1000).toFixed(1)}K` 
+                      : globalStats.totalReviews
+                  : '0'} cards reviewed
               </span>
             </div>
             <div className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-full backdrop-blur-md shadow-[0_0_20px_rgba(249,115,22,0.15)] min-w-[180px]">
               <span className="text-sm">🔥</span>
               <span className="text-xs font-bold text-white uppercase tracking-wider">
-                {globalStats?.activeStreaks || 14} DAY STREAK
+                {globalStats?.activeStreaks || 0} DAY STREAK
               </span>
             </div>
             <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md min-w-[180px]">
               <span className="text-sm">⭐</span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">98% retention</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                {globalStats?.retentionRate || 96}% retention
+              </span>
             </div>
             <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md min-w-[180px]">
               <span className="text-sm">📚</span>
               <span className="text-xs font-bold text-white uppercase tracking-wider">
-                {globalStats ? `${Math.floor(globalStats.totalDecks / 100) + 50}K` : '50K'} decks created
+                {globalStats 
+                  ? globalStats.totalDecks >= 1000 
+                    ? `${(globalStats.totalDecks / 1000).toFixed(1)}K` 
+                    : globalStats.totalDecks
+                  : '0'} decks created
               </span>
             </div>
           </div>
