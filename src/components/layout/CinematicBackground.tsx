@@ -41,21 +41,21 @@ function CinematicBackgroundComponent() {
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#050510]">
       
-      {/* 🔮 CIRCLE GLOW: LEFT (PURPLE) */}
+      {/* 🔮 ADVANCED CIRCLE GLOW: LEFT (VIBRANT PURPLE) */}
       <div 
-        className="absolute w-[800px] h-[800px] rounded-full left-[-10%] top-[10%] animate-orb1 opacity-[0.45]"
+        className="absolute w-[900px] h-[900px] rounded-full left-[-15%] top-[5%] animate-orb1 opacity-[0.7]"
         style={{
-          background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, rgba(109,40,217,0.1) 45%, transparent 70%)',
-          filter: 'blur(60px)',
+          background: 'radial-gradient(circle at center, rgba(167,139,250,0.5) 0%, rgba(139,92,246,0.2) 35%, rgba(124,58,237,0.05) 60%, transparent 80%)',
+          filter: 'blur(100px)',
         }}
       />
 
-      {/* 🔮 CIRCLE GLOW: RIGHT (GREEN/TEAL) */}
+      {/* 🔮 ADVANCED CIRCLE GLOW: RIGHT (VIBRANT GREEN/CYAN) */}
       <div 
-        className="absolute w-[800px] h-[800px] rounded-full right-[-10%] bottom-[10%] animate-orb2 opacity-[0.4]"
+        className="absolute w-[900px] h-[900px] rounded-full right-[-15%] bottom-[5%] animate-orb2 opacity-[0.65]"
         style={{
-          background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, rgba(6,182,212,0.1) 45%, transparent 70%)',
-          filter: 'blur(60px)',
+          background: 'radial-gradient(circle at center, rgba(52,211,153,0.4) 0%, rgba(16,185,129,0.15) 35%, rgba(6,182,212,0.05) 60%, transparent 80%)',
+          filter: 'blur(100px)',
         }}
       />
 
