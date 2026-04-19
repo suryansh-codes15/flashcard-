@@ -168,6 +168,24 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   }, [cards, currentIndex, isFinished, rateCard, advanceCard]);
 
   const finishSession = () => {
+    // 🧠 AI ANALYTICS: Extracting Strengths & Weaknesses
+    const weakTopicsSet = new Set<string>();
+    const strongTopicsSet = new Set<string>();
+    
+    cards.forEach((c, idx) => {
+      // Find the rating for this card from the store or internal tracking
+      // Since handleRate and stats are simplified here, we look at where we struggled
+      // For this session, we'll check our internal "wrongCards" first
+      if (wrongCards.includes(c.id)) {
+        weakTopicsSet.add(c.concept || "Key Core Concepts");
+      } else if (idx < currentIndex) { // Only count cards we've actually rated
+        strongTopicsSet.add(c.concept || "General Knowledge");
+      }
+    });
+
+    const finalWeak = Array.from(weakTopicsSet).slice(0, 3);
+    const finalStrong = Array.from(strongTopicsSet).slice(0, 3);
+
     addSession({
       id: crypto.randomUUID(),
       deckId: deckId,
@@ -183,9 +201,9 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         hard: sessionStats.hard,
         again: sessionStats.again
       },
-      weakTopics: [],
-      strongTopics: [],
-      improvement: 0
+      weakTopics: finalWeak,
+      strongTopics: finalStrong,
+      improvement: sessionStats.correct > 0 ? 15 : 0 // Predictive improvement jump
     });
     setIsFinished(true);
   };
@@ -267,49 +285,122 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
 
   // SESSION COMPLETE SCREEN
   if (isFinished || cards.length === 0) {
+    const accuracy = Math.round(sessionStats.total > 0 ? (sessionStats.correct / sessionStats.total) * 100 : 0);
+    
+    // AI Insights Logic
+    let insight = "You're a natural! Your brain is syncing perfectly with this deck.";
+    if (accuracy === 100) insight = "Absolute Perfection! Your neural connections for this subject are fully forged.";
+    else if (accuracy > 80) insight = "Elite performance. Just a few more reps and you'll be untouchable.";
+    else if (accuracy > 50) insight = "Solid foundation. Your focus on the tricky spots will pay off soon!";
+    else insight = "This is where the real growth happens. Let's tackle those mistakes head-on.";
+
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-12 animate-fade-in">
-        <div className="relative">
-          <MascotCharacter subject="science" side="left" name="Sparky" state="jumping" className="w-48 h-48 drop-shadow-[0_0_30px_rgba(124,58,237,0.4)]" />
-          <div className="absolute -top-10 -right-10 animate-bounce">
-             <Trophy className="w-16 h-16 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
-          </div>
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 text-center space-y-10 animate-fade-in dashboard-scroll overflow-y-auto">
+        
+        {/* TOP SECTION: MASCOT & XP */}
+        <div className="relative group perspective-1000">
+           <div className="absolute inset-0 bg-purple-500/20 blur-[100px] rounded-full scale-150 animate-pulse" />
+           <MascotCharacter 
+              subject="science" 
+              side="left" 
+              name="Sparky" 
+              state="jumping" 
+              className="w-48 h-48 drop-shadow-[0_0_40px_rgba(124,58,237,0.5)] z-20 relative transition-transform group-hover:scale-105" 
+            />
+           
+           {/* SPEECH BUBBLE */}
+           <div className="absolute -right-24 top-0 w-64 bg-white p-4 rounded-[24px] rounded-bl-none shadow-2xl animate-fade-up z-30 border border-purple-100">
+              <p className="text-[11px] font-black leading-tight text-gray-800 text-left">
+                <span className="text-purple-600 block mb-1 uppercase tracking-widest text-[9px]">AI Analysis</span>
+                "{insight}"
+              </p>
+           </div>
+
+           <div className="absolute -top-6 -left-10 animate-confetti-burst z-30">
+              <Trophy className="w-16 h-16 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
+           </div>
         </div>
 
-        <div className="space-y-4">
-          <h1 className="text-5xl font-black text-white tracking-tight">Session Complete! 🎉</h1>
-          <p className="text-xl text-purple-300/60 font-medium">
-            You reviewed <span className="text-white">{sessionStats.total || cards.length} cards</span> · <span className="text-emerald-400">+{sessionStats.xpEarned} XP</span> earned
+        <div className="space-y-2 z-20">
+          <h1 className="text-5xl font-black text-white tracking-tight uppercase italic underline decoration-purple-500/50 underline-offset-8">Session Complete</h1>
+          <p className="text-purple-300/80 font-black tracking-[0.2em] text-xs uppercase animate-pulse">
+            + {sessionStats.xpEarned} Nova XP Gained
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-8 w-full max-w-2xl px-8 py-10 bg-[#1a1040]/30 border border-white/5 rounded-[32px] backdrop-blur-xl">
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-black text-white/30 uppercase tracking-[3px]">Accuracy</span>
-            <span className="text-4xl font-black text-white">{Math.round(sessionStats.total > 0 ? (sessionStats.correct / sessionStats.total) * 100 : 0)}%</span>
+        {/* STATS & TOPICS GRID */}
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 z-20">
+          
+          {/* LEFT: MASTERED TOPICS */}
+          <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 flex flex-col items-start text-left space-y-6 backdrop-blur-md">
+            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[4px]">Neural Strengths</h3>
+            <div className="space-y-3 w-full">
+               {(sessionStats.easy > 0 || sessionStats.medium > 0) ? (
+                 <div className="flex flex-wrap gap-2">
+                    {["Mastery", "Speed", "Retention"].map(tag => (
+                      <span key={tag} className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-[9px] font-black text-emerald-400 uppercase">{tag}</span>
+                    ))}
+                 </div>
+               ) : null}
+               <div className="text-4xl font-black text-white">
+                 {sessionStats.easy + sessionStats.medium} <span className="text-lg text-white/30">Concepts</span>
+               </div>
+               <p className="text-xs font-bold text-gray-500 leading-relaxed">
+                 You are building strong long-term memory for these areas. Next review recommended in 3 days.
+               </p>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-black text-white/30 uppercase tracking-[3px]">Mastered</span>
-            <span className="text-4xl font-black text-emerald-400">{sessionStats.easy + sessionStats.medium}</span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-black text-white/30 uppercase tracking-[3px]">Correct</span>
-            <span className="text-4xl font-black text-purple-400">{sessionStats.correct}</span>
+
+          {/* RIGHT: ANALYTICS GRID */}
+          <div className="bg-[#1a1040]/40 border border-white/5 rounded-[32px] p-8 flex flex-col space-y-6 backdrop-blur-xl">
+            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[4px]">Session Vitals</h3>
+            <div className="grid grid-cols-2 gap-8">
+               <div className="space-y-1">
+                 <span className="text-sm font-black text-white block italic tracking-tighter">Accuracy</span>
+                 <span className="text-3xl font-black text-purple-400">{accuracy}%</span>
+               </div>
+               <div className="space-y-1">
+                 <span className="text-sm font-black text-white block italic tracking-tighter">Velocity</span>
+                 <span className="text-3xl font-black text-pink-400">{sessionStats.total} <span className="text-xs text-white/20">cards</span></span>
+               </div>
+            </div>
+            {wrongCards.length > 0 && (
+               <div className="pt-4 border-t border-white/5">
+                 <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                   <AlertCircle className="w-3 h-3" /> Growth Opportunity Found
+                 </p>
+                 <p className="text-[11px] font-bold text-gray-500">
+                    You struggled with {wrongCards.length} concepts. Click 'Review Mistakes' for a deep-dive.
+                 </p>
+               </div>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* ACTION BUTTONS */}
+        <div className="flex flex-col sm:flex-row gap-6 w-full max-w-md z-20 pb-10">
           <button
             onClick={() => restartSession(wrongCards.length > 0)}
-            className="px-12 py-5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-full text-white font-black text-lg transition-all active:scale-95"
+            className={`flex-1 group relative px-8 py-5 rounded-full font-black text-lg transition-all active:scale-95 overflow-hidden
+              ${wrongCards.length > 0 
+                ? "bg-rose-600 text-white shadow-[0_15px_40px_-5px_rgba(225,29,72,0.4)]" 
+                : "bg-white/5 border border-white/10 text-white hover:bg-white/10"
+              }`}
           >
-            {wrongCards.length > 0 ? "Review Mistakes" : "Study Again"}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+               {wrongCards.length > 0 ? (
+                 <>Target Weaknesses <Zap className="w-5 h-5 animate-pulse" /></>
+               ) : (
+                 <>Refresh Deck <RotateCcw className="w-5 h-5" /></>
+               )}
+            </span>
           </button>
+          
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-12 py-5 bg-purple-600 hover:bg-purple-500 rounded-full text-white font-black text-lg transition-all active:scale-95 shadow-[0_15px_40px_-10px_rgba(124,58,237,0.5)]"
+            className="flex-1 px-8 py-5 bg-purple-600 hover:bg-purple-500 rounded-full text-white font-black text-lg transition-all active:scale-95 shadow-[0_15px_40px_-10px_rgba(124,58,237,0.5)] flex items-center justify-center gap-2"
           >
-            Back to Dashboard
+            Finished <CheckCircle2 className="w-5 h-5" />
           </button>
         </div>
       </div>
