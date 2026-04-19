@@ -156,13 +156,16 @@ export default function MascotCharacter({ side, name, subject, state, onClick, c
   return (
     <div 
       onClick={(e) => {
-        e.stopPropagation();
-        onClick?.();
+        if (onClick) {
+          e.stopPropagation();
+          onClick();
+        }
       }}
-      className={`relative w-[88px] h-[110px] cursor-pointer transition-all duration-300 ${animationClass} ${className} group`}
+      className={`relative w-[88px] h-[110px] ${onClick ? 'cursor-pointer' : 'pointer-events-none'} transition-all duration-300 ${animationClass} ${className} group`}
       style={{ filter: `drop-shadow(0 0 15px ${body}55)` }}
     >
-      <svg viewBox="0 0 88 110" className="w-full h-full overflow-visible">
+      <div className="absolute inset-0 pointer-events-auto">
+        <svg viewBox="0 0 88 110" className="w-full h-full overflow-visible">
         {/* Ground Shadow */}
         <ellipse cx="44" cy="106" rx="30" ry="4" fill="rgba(0,0,0,0.4)" />
 
@@ -198,6 +201,7 @@ export default function MascotCharacter({ side, name, subject, state, onClick, c
           {renderProps()}
         </g>
       </svg>
+      </div>
       
       {/* Subject Name Label */}
       <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">

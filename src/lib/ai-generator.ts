@@ -5,9 +5,54 @@ import path from 'path';
 import { auditLog } from './logger';
 import type { PDFChunk, Flashcard, CardType, ClassLevel, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
+const API_KEYS = [
+  process.env.GROQ_API_KEY,
+  process.env.GROQ_API_KEY_2
+].filter(Boolean) as string[];
+
+const groqClients = API_KEYS.map(key => new Groq({ apiKey: key }));
 const PRIMARY_MODEL = 'llama-3.1-8b-instant';
 const FALLBACK_MODEL = 'llama3-8b-8192';
+
+/**
+ * Executes a Groq completion with automatic key rotation fallback on 429 Errors.
+ */
+async function callGroqWithFallback(options: any, preferredModel?: string) {
+  let lastError = null;
+  
+  // Try each key in the pool
+  for (let i = 0; i < groqClients.length; i++) {
+    try {
+      const client = groqClients[i];
+      const model = preferredModel || options.model || PRIMARY_MODEL;
+      
+      const completion = await client.chat.completions.create({
+        ...options,
+        model
+      });
+      
+      return completion;
+    } catch (err: any) {
+      lastError = err;
+      const isRateLimit = err.status === 429 || (err.message && err.message.includes('rate limit'));
+      const isOverloaded = err.status === 503;
+      
+      if ((isRateLimit || isOverloaded) && i < groqClients.length - 1) {
+        auditLog('ai_key_fallback_trigger', { 
+          failed_key_index: i, 
+          status: err.status,
+          next_key_index: i + 1 
+        });
+        // Continue to next key in loop
+        continue;
+      }
+      
+      // If it's not a retryable error or we ran out of keys, throw
+      throw err;
+    }
+  }
+  throw lastError;
+}
 
 // Engine Heartbeat: v2.5.1 (Forcing Re-compilation)
 
@@ -124,32 +169,18 @@ async function generateCardsForChunk(
 
   let completion;
   try {
-    completion = await groq.chat.completions.create({
+    completion = await callGroqWithFallback({
       messages: [
         { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\nTARGET CLASS LEVEL: ${classLevel.toUpperCase()}` },
         { role: 'user', content: prompt },
       ],
-      model: PRIMARY_MODEL,
       response_format: { type: 'json_object' },
       temperature: 0.65,
       max_tokens: 2500,
     });
   } catch (err: any) {
-    if (err.status === 429) {
-      auditLog('ai_rate_limit_fallback', { model: FALLBACK_MODEL });
-      completion = await groq.chat.completions.create({
-        messages: [
-          { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\nTARGET CLASS LEVEL: ${classLevel.toUpperCase()}` },
-          { role: 'user', content: prompt },
-        ],
-        model: FALLBACK_MODEL,
-        response_format: { type: 'json_object' },
-        temperature: 0.65,
-        max_tokens: 2500,
-      });
-    } else {
-      throw err;
-    }
+    auditLog('ai_chunk_generation_failed', { error: err.message });
+    throw err;
   }
 
   const text = completion.choices[0]?.message?.content || '{}';
@@ -335,9 +366,8 @@ Context: ${context}`
   };
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await callGroqWithFallback({
       messages: [{ role: 'user', content: prompts[action] }],
-      model: PRIMARY_MODEL,
       max_tokens: 600,
       temperature: 0.7,
     });
@@ -354,12 +384,11 @@ export async function regenerateCard(
   context: string
 ): Promise<{ front: string; back: string }> {
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await callGroqWithFallback({
       messages: [{
         role: 'user',
         content: `Improve this flashcard to be more effective for learning.\n\nOriginal Front: ${front}\nOriginal Back: ${back}\nSource Context: ${context}\n\nReturn ONLY JSON: {"front":"...","back":"..."}`,
       }],
-      model: PRIMARY_MODEL,
       response_format: { type: 'json_object' },
       max_tokens: 512,
     });
@@ -385,9 +414,8 @@ export async function generateSummary(
   Give specific pedagogical advice based on these numbers. If they struggled, focus on concept-building. If they succeeded, focus on application.`;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await callGroqWithFallback({
       messages: [{ role: 'system', content: 'You are an Elite Teacher providing personalized feedback.' }, { role: 'user', content: prompt }],
-      model: PRIMARY_MODEL,
       temperature: 0.7,
       max_tokens: 300,
     });

@@ -104,6 +104,8 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   const [floatingXP, setFloatingXP] = useState<number | null>(null);
   const [holoBoost, setHoloBoost] = useState(false);
   const [cardError, setCardError] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const sceneRef = useRef<HTMLDivElement>(null);
 
   const [hydrated, setHydrated] = useState(false);
@@ -235,6 +237,35 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       improvement: sessionStats.correct > 0 ? 15 : 0 // Predictive improvement jump
     });
     setIsFinished(true);
+    
+    // 🤖 TRIGGER LIVE AI FEEDBACK
+    setIsAnalyzing(true);
+    fetch('/api/ai/session-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stats: {
+          easy: sessionStats.easy,
+          medium: sessionStats.medium,
+          hard: sessionStats.hard,
+          again: sessionStats.again
+        },
+        accuracy: sessionStats.total > 0 ? Math.round((sessionStats.correct / sessionStats.total) * 100) : 0,
+        weakTopics: finalWeak,
+        strongTopics: finalStrong,
+        deckName: deck.title
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      setAiFeedback(data.feedback);
+      setIsAnalyzing(false);
+    })
+    .catch(err => {
+      console.error('AI Summary failed:', err);
+      setIsAnalyzing(false);
+      setAiFeedback("Great session! Your neural mapping is expanding rapidly.");
+    });
   };
 
   const restartSession = (onlyWrong: boolean) => {
@@ -350,7 +381,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 text-center space-y-10 animate-fade-in dashboard-scroll overflow-y-auto">
         
         {/* TOP SECTION: MASCOT & XP */}
-        <div className="relative group perspective-1000">
+        <div className="relative group perspective-1000 pointer-events-none">
            <div className="absolute inset-0 bg-purple-500/20 blur-[100px] rounded-full scale-150 animate-pulse" />
            <MascotCharacter 
               subject="science" 
@@ -364,7 +395,14 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
            <div className="absolute -right-24 top-0 w-64 bg-white p-4 rounded-[24px] rounded-bl-none shadow-2xl animate-fade-up z-30 border border-purple-100">
               <p className="text-[11px] font-black leading-tight text-gray-800 text-left">
                 <span className="text-purple-600 block mb-1 uppercase tracking-widest text-[9px]">AI Analysis</span>
-                "{insight}"
+                {isAnalyzing ? (
+                  <span className="flex items-center gap-1.5 opacity-50 italic">
+                    <Zap className="w-2.5 h-2.5 animate-pulse text-purple-500" /> 
+                    Synthesizing performance data...
+                  </span>
+                ) : (
+                  <>"{aiFeedback || insight}"</>
+                )}
               </p>
            </div>
 
@@ -430,7 +468,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         </div>
 
         {/* ACTION BUTTONS */}
-        <div className="flex flex-col sm:flex-row gap-6 w-full max-w-md z-20 pb-10">
+        <div className="flex flex-col sm:flex-row gap-6 w-full max-w-md z-[70] pb-10 pointer-events-auto">
           <button
             onClick={() => restartSession(wrongCards.length > 0)}
             className={`flex-1 group relative px-8 py-5 rounded-full font-black text-lg transition-all active:scale-95 overflow-hidden
@@ -534,7 +572,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         <div className="flex items-center justify-center gap-4 md:gap-24 relative perspective-2000">
           
           {/* Sparky / GUARDIAN (Left) */}
-          <div className="hidden md:flex flex-col items-center gap-4 z-50">
+          <div className="hidden md:flex flex-col items-center gap-4 z-50 pointer-events-none">
              <div style={{ animation: 'charRead 3.2s ease-in-out infinite' }}>
                <MascotCharacter 
                   side="left"
@@ -570,7 +608,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
           </div>
 
           {/* Nova / HYPE-BOT (Right) */}
-          <div className="hidden md:flex flex-col items-center gap-4 z-50">
+          <div className="hidden md:flex flex-col items-center gap-4 z-50 pointer-events-none">
              <div style={{ animation: 'charDance 2.2s ease-in-out infinite', animationDelay: '0.4s' }}>
                <MascotCharacter 
                   side="right"
@@ -587,7 +625,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         </div>
 
         {/* 🎮 BOTTOM CONTROLS AREA */}
-        <div className="w-full max-w-4xl flex flex-col items-center gap-2 pb-4 z-40 mt-4 sm:mt-6">
+        <div className="w-full max-w-4xl flex flex-col items-center gap-2 pb-4 z-[70] mt-4 sm:mt-6 pointer-events-auto">
             
             {/* Navigation Row */}
             <div className="flex items-center gap-4 bg-black/20 backdrop-blur-md px-6 py-2 rounded-full border border-white/5 shadow-2xl">
