@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['pdf2json', 'sharp'],
+  serverExternalPackages: ['pdf2json', 'sharp', 'pdf-parse'],
   outputFileTracingExcludes: {
     "/*": ["./node_modules/canvas/**/*", "./node_modules/jsdom/**/*", "./node_modules/pdfjs-dist/**/*"],
     "/api/**/*": ["./node_modules/canvas/**/*", "./node_modules/jsdom/**/*", "./node_modules/pdfjs-dist/**/*"]
