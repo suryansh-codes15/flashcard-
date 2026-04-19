@@ -197,8 +197,10 @@ export default function UploadPage() {
                   throw cardsError;
                 }
                 console.log('Forge results synced to cloud successfully.');
-              } catch (syncErr) {
+              } catch (syncErr: any) {
                 console.error('Cloud sync failed during forge:', syncErr);
+                // Make the sync error fatal for the UI so the user knows why cards are missing
+                throw new Error(`Database Sync Failed: ${syncErr.message || 'Unknown error'}. Your cards might not be saved to the cloud.`);
               }
             }
 
