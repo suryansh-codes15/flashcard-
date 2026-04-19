@@ -11,7 +11,6 @@ import { generateId, getDeckEmoji } from '@/lib/utils';
 import type { GenerationProgress, Flashcard, ClassLevel } from '@/types';
 import MascotCharacter from '@/components/MascotCharacter';
 import SampleLibrary from '@/components/forge/SampleLibrary';
-import { supabase } from '@/lib/supabase';
 
 const MODES = [
   { id: 'concept', label: 'Deep Learning', emoji: '🧠', desc: 'Core concept & definitions', mascot: 'science', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' },
@@ -169,6 +168,7 @@ export default function UploadPage() {
                 const { error: cardsError } = await supabase
                   .from('flashcards')
                   .insert(cards.map(c => ({
+                    id: c.id, // Explicitly use the local UUID
                     deck_id: deckId,
                     front: c.front,
                     back: c.back,
@@ -384,10 +384,7 @@ export default function UploadPage() {
                      ))}
                   </div>
                   <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push('/dashboard');
-                    }}
+                    onClick={() => router.push('/dashboard')}
                     className="mt-6 px-8 py-4 rounded-full bg-emerald-600 text-white font-black z-20 hover:scale-105 active:scale-95 transition-all w-full md:w-auto"
                   >
                     Start studying →
@@ -398,15 +395,7 @@ export default function UploadPage() {
                   <AlertCircle className="w-10 h-10 text-red-500 mb-2" />
                   <p className="text-xl font-black text-rose-400">Forge failed</p>
                   <p className="text-[11px] font-bold text-rose-400/80 uppercase tracking-widest">{error}</p>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setStage('idle');
-                    }} 
-                    className="mt-4 px-6 py-2 rounded-full border border-red-500/30 text-rose-400 text-[10px] font-black uppercase hover:bg-red-500/10 transition-colors"
-                  >
-                    Try again
-                  </button>
+                  <button onClick={() => setStage('idle')} className="mt-4 px-6 py-2 rounded-full border border-red-500/30 text-rose-400 text-[10px] font-black uppercase hover:bg-red-500/10 transition-colors">Try again</button>
                 </div>
               )}
             </div>

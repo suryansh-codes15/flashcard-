@@ -8,8 +8,6 @@ import { useStudyStats } from '@/hooks/useStudyStats';
 import MascotCharacter from '@/components/MascotCharacter';
 import XPBar from '@/components/XPBar';
 import ProfilePrompt from '@/components/dashboard/ProfilePrompt';
-import DashboardStatsRow from '@/components/DashboardStatsRow';
-import AccuracyChart from '@/components/dashboard/AccuracyChart';
 import { supabase } from '@/lib/supabase';
 import type { Deck, Flashcard } from '@/types';
 
@@ -22,10 +20,22 @@ function getGreeting(name: string): string {
   return `Still at it, ${name}! 🌙`;
 }
 
+function StatCard({ label, value, delay, color = 'border-purple-500' }: { label: string; value: string | number; delay: string; color?: string }) {
+  return (
+    <div 
+      className={`p-6 rounded-2xl flex flex-col justify-center bg-[#1a1040] border-t-4 ${color} border-l border-r border-b border-white/5 shadow-2xl animate-fade-up relative overflow-hidden group`}
+      style={{ animationDelay: delay, animationFillMode: 'both' }}
+    >
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <span className="text-3xl font-black text-white mb-2 relative z-10">{value}</span>
+      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest relative z-10">{label}</span>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { decks, profile, setProfile, sessions } = useFlashcardStore();
+  const { decks, profile, setProfile } = useFlashcardStore();
   const stats = useStudyStats();
   const [hydrated, setHydrated] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -151,10 +161,8 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row items-end justify-between gap-8 py-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3 mb-1">
-             <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-purple-500' : 'bg-emerald-500'} animate-pulse`} />
-             <span className={`text-[10px] font-black ${isSyncing ? 'text-purple-400' : 'text-emerald-400'} uppercase tracking-widest`}>
-               {isSyncing ? 'Refreshing Collection...' : 'Live Sync Active'}
-             </span>
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+             <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Live Sync Active</span>
           </div>
           <h1 className="text-4xl font-black text-white tracking-tight">
             {getGreeting(profile.name)}
@@ -190,17 +198,18 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* STATS ROW & TRENDS */}
+      {/* STATS ROW */}
       {decks.length > 0 && (
-        <div className="space-y-10">
-          <DashboardStatsRow stats={{
-            totalCards: stats.totalCards,
-            masteryPercentage: stats.accuracy,
-            dueToday: stats.dueNow,
-            totalDecks: decks.length
-          }} />
-
-          <AccuracyChart sessions={sessions} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <StatCard label="Total Cards" value={stats.totalCards} delay="0s" color="border-purple-500" />
+          <StatCard 
+            label="Accuracy" 
+            value={stats.accuracy > 0 ? `${stats.accuracy}%` : '--'} 
+            delay="0.1s" 
+            color="border-emerald-500" 
+          />
+          <StatCard label="Due Now" value={stats.dueNow} delay="0.2s" color="border-amber-500" />
+          <StatCard label="Cards Mastered" value={stats.mastered} delay="0.3s" color="border-pink-500" />
         </div>
       )}
 

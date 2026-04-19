@@ -24,14 +24,17 @@
 
 @layer base {
   html {
-    background-color: var(--bg-primary);
+    background: #050510 !important;
   }
   body {
-    background-color: transparent;
+    background: #050510 !important;
     color: var(--text-primary);
     font-family: 'Inter', system-ui, sans-serif;
     overflow-x: hidden;
-    line-height: 1.7;
+  }
+  
+  #__next, main, [class*="relative"] {
+    background: transparent !important;
   }
 }
 
@@ -40,44 +43,39 @@
    ────────────────────────────────────────── */
 
 @keyframes orb1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50%      { transform: translate(120px, -80px) scale(1.15); }
+  0%, 100% { transform: translate(0,0) scale(1); }
+  40%      { transform: translate(30px,-20px) scale(1.06); }
+  70%      { transform: translate(-15px,25px) scale(0.96); }
 }
 @keyframes orb2 {
-  0%, 100% { transform: translate(0, 0) scale(1.1); }
-  45%      { transform: translate(-100px, 80px) scale(1); }
+  0%, 100% { transform: translate(0,0); }
+  50%      { transform: translate(20px,-30px) scale(1.08); }
 }
 @keyframes orb3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  60%      { transform: translate(80px, 60px) scale(1.1); }
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(-25px,-20px) scale(1.05); }
 }
-
 @keyframes starTwinkle {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50%      { opacity: 1;    transform: scale(1.3); }
+  0%, 100% { opacity: 0.1; transform: scale(0.75); }
+  50%      { opacity: 0.95; transform: scale(1.35); }
 }
-
-@keyframes sparkle {
-  0%, 100% { opacity: 0.15; transform: scale(0.7); }
-  50%      { opacity: 0.8;  transform: scale(1.4); }
+@keyframes risingParticle {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  15%  { opacity: 0.7; }
+  85%  { opacity: 0.3; }
+  100% { transform: translateY(-150px) translateX(var(--dx)); opacity: 0; }
 }
-
 @keyframes scanLine {
-  0%   { top: 0; opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { top: 100%; opacity: 0; }
+  0%   { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh); }
 }
-
-@keyframes particleRise {
-  0%   { transform: translateY(0); opacity: 0; }
-  20%  { opacity: 1; }
-  100% { transform: translateY(-140px); opacity: 0; }
+@keyframes gridGlow {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.45; }
 }
-
-@keyframes gridPulse {
-  0%, 100% { opacity: 0.03; }
-  50%      { opacity: 0.08; }
+@keyframes horizonPulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1.0; }
 }
 
 /* ──────────────────────────────────────────
