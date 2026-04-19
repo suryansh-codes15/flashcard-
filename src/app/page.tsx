@@ -138,6 +138,24 @@ export default function LandingPage() {
           </div>
 
 
+          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-antigravity">
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600/10 border border-purple-600/30 rounded-full backdrop-blur-md">
+              <span className="text-sm">🤖</span>
+              <span className="text-xs font-black text-purple-400 uppercase tracking-widest leading-none">GEMINI AI FORGE</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/10 border border-emerald-600/30 rounded-full backdrop-blur-md">
+              <span className="text-sm">🔒</span>
+              <span className="text-xs font-black text-emerald-400 uppercase tracking-widest leading-none">100% LOCAL PRIVACY</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-600/10 border border-amber-600/30 rounded-full backdrop-blur-md">
+              <span className="text-sm">📂</span>
+              <span className="text-xs font-black text-amber-400 uppercase tracking-widest leading-none">10MB TEXTBOOK LIMIT</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-600/30 rounded-full backdrop-blur-md">
+              <span className="text-sm">🧠</span>
+              <span className="text-xs font-black text-blue-400 uppercase tracking-widest leading-none">SM-2 ALGORITHM</span>
+            </div>
+          </div>
           
           <div className="flex items-end justify-center w-full gap-8 mt-12">
             <div className="hidden md:flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('sparky')}>
