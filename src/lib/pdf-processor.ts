@@ -29,12 +29,12 @@ async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
   return new Promise((resolve, reject) => {
     const pdfParser = new PDFParser(null, 1); // 1 = text only mode
 
-    pdfParser.on("pdfParser_dataError", errData => {
+    pdfParser.on("pdfParser_dataError", (errData: any) => {
       console.error('pdf2json error:', errData.parserError);
       reject(new Error('PDF extraction failed. The file might be corrupted or protected.'));
     });
 
-    pdfParser.on("pdfParser_dataReady", pdfData => {
+    pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
       try {
         // Robust manual extraction loop
         let text = "";
