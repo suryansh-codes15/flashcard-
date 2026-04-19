@@ -387,7 +387,7 @@ export async function generateSummary(
   try {
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'system', content: 'You are an Elite Teacher providing personalized feedback.' }, { role: 'user', content: prompt }],
-      model: GROQ_MODEL,
+      model: PRIMARY_MODEL,
       temperature: 0.7,
       max_tokens: 300,
     });
