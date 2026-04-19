@@ -56,7 +56,13 @@ export default function ProfilePrompt() {
         <div className="relative z-10 flex flex-col items-center text-center space-y-8">
           <div className="w-24 h-24 relative mb-2">
              <div className="absolute inset-0 bg-purple-500/20 rounded-full animate-pulse blur-xl" />
-             <MascotCharacter subject="science" state="jumping" side="left" className="w-full h-full drop-shadow-2xl" />
+             <MascotCharacter 
+               side="left"
+               name="Sparky"
+               subject="science" 
+               state="jumping" 
+               className="w-full h-full drop-shadow-2xl" 
+             />
           </div>
 
           <div className="space-y-3">
