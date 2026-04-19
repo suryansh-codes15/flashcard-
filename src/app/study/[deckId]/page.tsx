@@ -233,10 +233,22 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   const handleRateRef = useRef(handleRate);
   const isFinishedRef = useRef(isFinished);
   const cardsRef = useRef(cards);
+  const advanceCardRef = useRef(advanceCard);
+  const goToPrevRef = useRef(() => {});
+
+  const goToPrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+      setFlipped(false);
+      setCardError(false);
+    }
+  }, [currentIndex]);
 
   // Keep refs in sync with state
   useEffect(() => { flippedRef.current = flipped; }, [flipped]);
   useEffect(() => { handleRateRef.current = handleRate; }, [handleRate]);
+  useEffect(() => { advanceCardRef.current = advanceCard; }, [advanceCard]);
+  useEffect(() => { goToPrevRef.current = goToPrev; }, [goToPrev]);
   useEffect(() => { isFinishedRef.current = isFinished; }, [isFinished]);
   useEffect(() => { cardsRef.current = cards; }, [cards]);
 
@@ -246,8 +258,12 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       const key = e.key;
       const code = e.code;
 
-      // 🔄 FLIP & SCROLL PREVENTION: Handle Space, Enter, and numbers early
-      const isInteractionKey = (key === ' ' || code === 'Space' || key === 'Enter' || ['1','2','3','4'].includes(key));
+      // 🔄 FLIP & SCROLL PREVENTION: Handle Space, Enter, numbers, and ARROW KEYS
+      const isInteractionKey = (
+        key === ' ' || code === 'Space' || key === 'Enter' || 
+        ['1','2','3','4'].includes(key) || 
+        key === 'ArrowLeft' || key === 'ArrowRight'
+      );
       
       if (isInteractionKey) {
         // Stop the browser from scrolling or doing anything else immediately
@@ -273,6 +289,13 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         } else if (key === '4' || code === 'Digit4') {
           handleRateRef.current('easy');
         }
+      }
+
+      // 🧭 NAVIGATION LOGIC (Arrow keys)
+      if (key === 'ArrowLeft') {
+        goToPrevRef.current();
+      } else if (key === 'ArrowRight') {
+        advanceCardRef.current();
       }
     };
 
