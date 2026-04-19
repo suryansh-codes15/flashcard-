@@ -32,11 +32,11 @@ export default function FlashCard3D({
   const stars = ['✦', '★', '✧', '·', '✦', '★'];
 
   return (
-    <div className="relative flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="relative flex items-center justify-center p-2 sm:p-4">
       
       {/* 🔮 LAYER 1 & 4 (Glow + Shadow) */}
       <div 
-        className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[200px] h-[18px] bg-black/50 blur-xl rounded-[50%] animate-[shadowPulse_4.5s_ease-in-out_infinite]"
+        className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[180px] h-[14px] bg-black/50 blur-xl rounded-[50%] animate-[shadowPulse_4.5s_ease-in-out_infinite]"
         style={{ zIndex: 0 }}
       />
       
@@ -48,7 +48,7 @@ export default function FlashCard3D({
             className="absolute top-1/2 left-1/2 text-white/40 animate-float-star font-serif"
             style={{
               fontSize: i % 2 === 0 ? '18px' : '14px',
-              transform: `rotate(${i * 60}deg) translateY(-180px)`,
+              transform: `rotate(${i * 60}deg) translateY(-160px)`,
               animationDelay: `${i * 0.7}s`,
             }}
           >
@@ -59,7 +59,7 @@ export default function FlashCard3D({
 
       {/* 🃏 LAYER 3 (Card Wrapper) */}
       <div 
-        className={`relative w-full min-h-[380px] max-h-[440px] cursor-pointer preserve-3d transition-transform duration-[700ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]
+        className={`relative w-full min-h-[320px] max-h-[380px] cursor-pointer preserve-3d transition-transform duration-[700ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]
           ${flipped ? 'rotate-y-180' : ''}`}
         onClick={onFlip}
         style={{

@@ -323,7 +323,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   return (
     <div className="h-screen flex flex-col items-center overflow-hidden">
       {/* 📊 TOP PROGRESS BAR */}
-      <div className="fixed top-0 left-0 w-full h-[8px] bg-white/5 z-[200]">
+      <div className="fixed top-0 left-0 w-full h-[6px] bg-white/5 z-[200]">
         <div 
           className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all duration-500 ease-out shadow-[0_0_15px_rgba(124,58,237,0.5)]"
           style={{ width: `${progressPercent}%` }}
@@ -331,7 +331,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       </div>
 
       {/* 📂 SESSION HEADER */}
-      <div className="w-full max-w-7xl px-8 py-6 flex items-center justify-between z-10 shrink-0">
+      <div className="w-full max-w-7xl px-8 py-3 flex items-center justify-between z-10 shrink-0">
         <div className="flex items-center gap-6">
           <button
             onClick={() => router.push('/dashboard')}
@@ -440,7 +440,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         </div>
 
         {/* 🎮 BOTTOM CONTROLS AREA */}
-        <div className="w-full max-w-4xl flex flex-col items-center gap-6 pb-8 z-40 mt-8 sm:mt-12">
+        <div className="w-full max-w-4xl flex flex-col items-center gap-2 pb-4 z-40 mt-4 sm:mt-6">
             
             {/* Navigation Row */}
             <div className="flex items-center gap-4 bg-black/20 backdrop-blur-md px-6 py-2 rounded-full border border-white/5 shadow-2xl">
@@ -481,31 +481,31 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
                   <div className="flex gap-4 animate-fade-up w-full px-4 overflow-x-auto pb-4 no-scrollbar">
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleRate('again'); }} 
-                      className="flex-1 min-w-[120px] h-20 bg-[#3b0a0a]/40 hover:bg-red-500/10 border border-white/5 hover:border-red-500/30 rounded-2xl transition-all group flex flex-col items-center justify-center gap-1 shadow-xl active:scale-95"
+                      className="flex-1 min-w-[100px] h-16 bg-[#3b0a0a]/40 hover:bg-red-500/10 border border-white/5 hover:border-red-500/30 rounded-xl transition-all group flex flex-col items-center justify-center gap-0.5 shadow-xl active:scale-95"
                     >
-                      <span className="text-[13px] font-black text-white/60 uppercase tracking-widest group-hover:text-red-400">Again</span>
-                      <span className="text-[9px] font-black text-white/20 group-hover:text-red-500/40">+0 XP · Press 1</span>
+                      <span className="text-[12px] font-black text-white/60 uppercase tracking-widest group-hover:text-red-400">Again</span>
+                      <span className="text-[8px] font-black text-white/20 group-hover:text-red-500/40">+0 XP · 1</span>
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleRate('hard'); }} 
-                      className="flex-1 min-w-[120px] h-20 bg-[#2c1c00]/40 hover:bg-amber-500/10 border border-white/5 hover:border-amber-500/30 rounded-2xl transition-all group flex flex-col items-center justify-center gap-1 shadow-xl active:scale-95"
+                      className="flex-1 min-w-[100px] h-16 bg-[#2c1c00]/40 hover:bg-amber-500/10 border border-white/5 hover:border-amber-500/30 rounded-xl transition-all group flex flex-col items-center justify-center gap-0.5 shadow-xl active:scale-95"
                     >
-                      <span className="text-[13px] font-black text-white/60 uppercase tracking-widest group-hover:text-amber-400">Hard</span>
-                      <span className="text-[9px] font-black text-white/20 group-hover:text-amber-500/40">+5 XP · Press 2</span>
+                      <span className="text-[12px] font-black text-white/60 uppercase tracking-widest group-hover:text-amber-400">Hard</span>
+                      <span className="text-[8px] font-black text-white/20 group-hover:text-amber-500/40">+5 XP · 2</span>
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleRate('medium'); }} 
-                      className="flex-1 min-w-[120px] h-20 bg-[#0a2c1c]/40 hover:bg-blue-500/10 border border-white/5 hover:border-blue-500/30 rounded-2xl transition-all group flex flex-col items-center justify-center gap-1 shadow-xl active:scale-95"
+                      className="flex-1 min-w-[100px] h-16 bg-[#0a2c1c]/40 hover:bg-blue-500/10 border border-white/5 hover:border-blue-500/30 rounded-xl transition-all group flex flex-col items-center justify-center gap-0.5 shadow-xl active:scale-95"
                     >
-                      <span className="text-[13px] font-black text-white/60 uppercase tracking-widest group-hover:text-blue-400">Good</span>
-                      <span className="text-[9px] font-black text-white/20 group-hover:text-blue-500/40">+10 XP · Press 3</span>
+                      <span className="text-[12px] font-black text-white/60 uppercase tracking-widest group-hover:text-blue-400">Good</span>
+                      <span className="text-[8px] font-black text-white/20 group-hover:text-blue-500/40">+10 XP · 3</span>
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleRate('easy'); }} 
-                      className="flex-1 min-w-[120px] h-20 bg-[#0c2240]/40 hover:bg-emerald-500/10 border border-white/5 hover:border-emerald-500/30 rounded-2xl transition-all group flex flex-col items-center justify-center gap-1 shadow-xl active:scale-95"
+                      className="flex-1 min-w-[100px] h-16 bg-[#0c2240]/40 hover:bg-emerald-500/10 border border-white/5 hover:border-emerald-500/30 rounded-xl transition-all group flex flex-col items-center justify-center gap-0.5 shadow-xl active:scale-95"
                     >
-                      <span className="text-[13px] font-black text-white/60 uppercase tracking-widest group-hover:text-emerald-400">Easy</span>
-                      <span className="text-[9px] font-black text-white/20 group-hover:text-emerald-500/40">+20 XP · Press 4</span>
+                      <span className="text-[12px] font-black text-white/60 uppercase tracking-widest group-hover:text-emerald-400">Easy</span>
+                      <span className="text-[8px] font-black text-white/20 group-hover:text-emerald-500/40">+20 XP · 4</span>
                     </button>
                   </div>
                 )}
