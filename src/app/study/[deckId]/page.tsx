@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useFlashcardStore } from '@/store/flashcard-store';
 import MascotCharacter from '@/components/MascotCharacter';
 import FlashCard3D from '@/components/practice/FlashCard3D';
-import { ArrowLeft, Flame, Trophy, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Flame, Trophy, ChevronLeft, AlertCircle, Zap, RotateCcw, CheckCircle2 } from 'lucide-react';
 import type { Flashcard, DifficultyLevel, MascotState } from '@/types';
 
 // Pure CSS Confetti Component (Dual Sided)
