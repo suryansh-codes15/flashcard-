@@ -10,25 +10,14 @@ export default function SettingsPage() {
   const [autoNext, setAutoNext] = useState(false);
   const [showProgress, setShowProgress] = useState(true);
 
-  // AI Config
-  const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
-  const [model, setModel] = useState('Gemini Flash');
+
 
   // Notifications
   const [dailyReminder, setDailyReminder] = useState(true);
   const [reminderTime, setReminderTime] = useState('19:00');
   const [streakWarning, setStreakWarning] = useState(true);
 
-  useEffect(() => {
-    const savedKey = localStorage.getItem('forge_api_key');
-    if (savedKey) setApiKey(savedKey);
-  }, []);
 
-  const handleSaveKey = () => {
-    localStorage.setItem('forge_api_key', apiKey);
-    alert('API Key saved securely to local storage.');
-  };
 
   const handleClearData = () => {
     if (confirm('Are you absolutely sure? This will wipe all decks, flashcards, and sessions. This cannot be undone.')) {
@@ -65,56 +54,7 @@ export default function SettingsPage() {
   };
 
   const sections = [
-    {
-      title: 'AI Configuration',
-      icon: Zap,
-      content: (
-        <div className="space-y-4">
-          <div className="p-6 rounded-[20px] bg-[#0f0a1e] border border-white/5 shadow-xl space-y-4">
-            <div>
-              <label className="text-[13px] font-black text-white uppercase tracking-wider block mb-1">Gemini API Key</label>
-              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed mb-4">
-                Used for Forge AI generation.
-              </p>
-              <div className="flex items-center gap-2">
-                <input
-                  type={showKey ? 'text' : 'password'}
-                  placeholder="AIza..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="flex-1 bg-[#1a1040] border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:outline-none focus:border-purple-500"
-                />
-                <button
-                  onClick={() => setShowKey(!showKey)}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[11px] font-black text-white uppercase tracking-widest transition-colors"
-                >
-                  {showKey ? 'Hide' : 'Show'}
-                </button>
-                <button
-                  onClick={handleSaveKey}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-[11px] font-black text-white uppercase tracking-widest transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
 
-            <div>
-              <label className="text-[13px] font-black text-white uppercase tracking-wider block mb-2 mt-4">AI Model</label>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="w-full bg-[#1a1040] border border-white/10 rounded-xl px-4 py-2 text-white font-medium text-sm focus:outline-none focus:border-purple-500 appearance-none"
-              >
-                <option value="Gemini Flash">Gemini Flash (Fastest)</option>
-                <option value="Gemini Pro">Gemini Pro</option>
-                <option value="GPT-4o">GPT-4o</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )
-    },
     {
       title: 'Study Experience',
       icon: Settings,
