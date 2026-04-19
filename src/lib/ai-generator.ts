@@ -216,8 +216,8 @@ export async function generateFlashcards(
   const TOTAL_TARGET = 20;
   const targetPerChunk = Math.max(2, Math.floor(TOTAL_TARGET / chunks.length));
 
-  // Process chunks in parallel with a higher concurrency limit
-  const CONCURRENCY_LIMIT = 10;
+  // Process chunks in parallel with a smart limit to avoid TPM bottlenecks
+  const CONCURRENCY_LIMIT = 3;
   const chunkResults: RawCard[][] = new Array(chunks.length);
   
   // Create an array of indices to process
