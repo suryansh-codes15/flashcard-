@@ -9,6 +9,8 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
 const PRIMARY_MODEL = 'llama-3.1-8b-instant';
 const FALLBACK_MODEL = 'llama3-8b-8192';
 
+// Engine Heartbeat: v2.5.1 (Forcing Re-compilation)
+
 // Template selection rules strictly following the new 8-type system
 const TEMPLATE_RULES = `
 You MUST categorize every card into one of these 8 STRICT types:
@@ -118,8 +120,6 @@ async function generateCardsForChunk(
   // Specific instruction for card count
   const countInstruction = `CRITICAL: You MUST generate EXACTLY ${targetCount} unique flashcards for this content. No more, no less.`;
   
-  const prompt = `${template}\n\n${countInstruction}\n\nCONTENT:\n${content}`;
-
   const prompt = `${template}\n\n${countInstruction}\n\nCONTENT:\n${content}`;
 
   let completion;

@@ -152,7 +152,8 @@ export async function processPDF(buffer: Buffer): Promise<{
   }
 
   const cleanedText = cleanText(text);
-  const chunks = splitIntoSemanticChunks(cleanedText);
+  // Use smaller 1000-token chunks to stay under Groq free-tier TPM limits
+  const chunks = splitIntoSemanticChunks(cleanedText, 1000);
 
   return { chunks, pageCount, title };
 }

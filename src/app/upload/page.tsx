@@ -369,11 +369,16 @@ export default function UploadPage() {
                   <div className="text-[11px] font-black uppercase tracking-widest text-purple-400 animate-pulse">Reading your PDF...</div>
                 </div>
               ) : stage === 'generating' ? (
-                <div className="flex flex-col items-center gap-6 px-10 text-center animate-fade-up">
+                <div className="flex flex-col items-center gap-6 w-full px-10 text-center animate-fade-up">
                   <MascotCharacter subject="science" side="left" name="Sparky" state="reading" className="w-24 h-24 drop-shadow-[0_0_20px_rgba(139,92,246,0.3)] mb-2" />
-                  <p className="text-sm font-black text-white">AI Art Director is forging your cards...</p>
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 animate-pulse">
-                    {statusMsg || 'Extracting key concepts...'}
+                  <div className="w-full space-y-4">
+                    <p className="text-sm font-black text-white">Forging your premium collection... {progress}%</p>
+                    <div className="w-full h-2 rounded-full bg-[#1a1040] overflow-hidden border border-white/5">
+                      <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(168,85,247,0.4)]" style={{ width: `${progress}%` }} />
+                    </div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 animate-pulse">
+                      {statusMsg || 'Extracting key concepts...'}
+                    </div>
                   </div>
                 </div>
               ) : stage === 'done' ? (
