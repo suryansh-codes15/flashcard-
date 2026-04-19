@@ -10,7 +10,7 @@ import { useFlashcardStore } from '@/store/flashcard-store';
 import { generateId, getDeckEmoji } from '@/lib/utils';
 import type { GenerationProgress, Flashcard, ClassLevel } from '@/types';
 import MascotCharacter from '@/components/MascotCharacter';
-import SampleLibrary from '@/components/forge/SampleLibrary';
+
 import { supabase } from '@/lib/supabase';
 
 const MODES = [
@@ -47,38 +47,7 @@ export default function UploadPage() {
     if (selected && selected.name.endsWith('.pdf')) setFile(selected);
   };
 
-  const handleLibrarySelect = async (url: string, name: string) => {
-    try {
-      setFile(null); // Clear previous size to avoid 0MB flicker
-      setCardCount(0);
-      setStage('uploading');
-      setStatusMsg(`Downloading ${name}...`);
-      
-      // Determine if it's a local asset or external URL
-      const isLocal = url.startsWith('/');
-      const fetchUrl = isLocal ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`;
-      
-      const response = await fetch(fetchUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to download ${isLocal ? 'local' : 'library'} sample`);
-      }
-      
-      const blob = await response.blob();
-      const libraryFile = new File([blob], `${name}.pdf`, { type: 'application/pdf' });
-      setFile(libraryFile);
-      
-      // Wait for state to settle then trigger generate
-      setTimeout(() => {
-        const forgeBtn = document.getElementById('forge-btn');
-        forgeBtn?.click();
-      }, 500);
-    } catch (err) {
-      console.error('Failed to load library sample:', err);
-      setError('Failed to download library sample.');
-      setStage('error');
-    }
-  };
+
 
   const handleGenerate = async () => {
     if (!file) return;
@@ -349,10 +318,7 @@ export default function UploadPage() {
             </div>
           </section>
 
-          {/* LIBRARY SECTION */}
-          <div className="pt-4">
-            <SampleLibrary onSelect={handleLibrarySelect} />
-          </div>
+
 
         </div>
 
