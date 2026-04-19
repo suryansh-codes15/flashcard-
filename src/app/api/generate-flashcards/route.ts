@@ -11,7 +11,7 @@ const RequestSchema = z.object({
   deckId: z.string().min(1),
   chunks: z.array(z.object({
     id: z.string(),
-    content: z.string().min(50),
+    content: z.string().min(1),
     sectionTitle: z.string().optional(),
     tokenCount: z.number().optional(),
   })).min(1),
