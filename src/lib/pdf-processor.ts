@@ -43,7 +43,12 @@ async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
             if (page.Texts && Array.isArray(page.Texts)) {
               page.Texts.forEach((t: any) => {
                 if (t.R && t.R[0] && t.R[0].T) {
-                  text += decodeURIComponent(t.R[0].T) + " ";
+                  try {
+                    text += decodeURIComponent(t.R[0].T) + " ";
+                  } catch (e) {
+                    // Fallback for malformed URI components often found in PDFs
+                    text += t.R[0].T + " ";
+                  }
                 }
               });
             }
