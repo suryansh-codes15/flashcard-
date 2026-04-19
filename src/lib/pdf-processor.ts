@@ -1,6 +1,4 @@
-// @ts-ignore
-import * as pdf from 'pdf-parse';
-import type { PDFChunk } from '@/types';
+const pdf = require('pdf-parse');
 
 interface ParsedPDF {
   text: string;
@@ -21,13 +19,12 @@ function cleanText(text: string): string {
 }
 
 /**
- * Robust extraction using pdf-parse (Pure Node.js, zero workers).
- * This completely avoids the "Fake Worker" issues seen with pdfjs-dist.
+ * Super-robust extraction using pdf-parse with require().
+ * This is the ultimate fix for Vercel/Node.js compatibility.
  */
 async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
   try {
-    const parse = (pdf as any).default || pdf;
-    const data = await parse(buffer);
+    const data = await pdf(buffer);
     
     return {
       text: data.text || '',
@@ -51,8 +48,8 @@ function detectHeading(line: string): boolean {
   return false;
 }
 
-function splitIntoSemanticChunks(text: string, maxTokens = 2000): PDFChunk[] {
-  const chunks: PDFChunk[] = [];
+function splitIntoSemanticChunks(text: string, maxTokens = 2000): any[] {
+  const chunks: any[] = [];
   const lines = text.split('\n');
 
   let currentChunkLines: string[] = [];
@@ -103,7 +100,7 @@ function splitIntoSemanticChunks(text: string, maxTokens = 2000): PDFChunk[] {
 }
 
 export async function processPDF(buffer: Buffer): Promise<{
-  chunks: PDFChunk[];
+  chunks: any[];
   pageCount: number;
   title?: string;
 }> {
