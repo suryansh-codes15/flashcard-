@@ -247,11 +247,11 @@ export async function generateFlashcards(
 ): Promise<Flashcard[]> {
   const allRawCards: RawCard[] = [];
 
-  // Determine total target count - Re-tuned to 30 for higher density
-  const TOTAL_TARGET = 30;
+  // Determine total target count - Re-tuned to 20 per user request [10, 20] range
+  const TOTAL_TARGET = 20;
   const envCardsPerChunk = parseInt(process.env.CARDS_PER_CHUNK || '6', 10);
   
-  // We calculate a healthy target per chunk but ensure it never drops below the env setting or 4
+  // We calculate a healthy target per chunk but ensure it stays within bounds
   const targetPerChunk = Math.max(envCardsPerChunk, Math.ceil(TOTAL_TARGET / chunks.length), 4);
 
   // Process chunks in parallel with a smart limit to avoid TPM bottlenecks
@@ -298,9 +298,9 @@ export async function generateFlashcards(
 
   let finalRawCards = deduplicateCards(allRawCards);
 
-  // FINAL CONSTRAINT ENFORCEMENT: 10 to 25
-  if (finalRawCards.length > 25) {
-    finalRawCards = finalRawCards.slice(0, 25);
+  // FINAL CONSTRAINT ENFORCEMENT: 10 to 20 [User Request]
+  if (finalRawCards.length > 20) {
+    finalRawCards = finalRawCards.slice(0, 20);
   }
   // (If less than 10, we keep what we have as forcing AI to hallucinate more from 
   // small text is dangerous, but usually it generates enough)
