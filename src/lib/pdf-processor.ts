@@ -1,4 +1,4 @@
-const pdf = require('pdf-parse');
+const PDFParser = require("pdf2json");
 
 interface ParsedPDF {
   text: string;
@@ -11,6 +11,7 @@ function estimateTokens(text: string): number {
 }
 
 function cleanText(text: string): string {
+  if (!text) return '';
   return text
     .replace(/\f/g, '\n')
     .replace(/[ \t]+/g, ' ')
@@ -19,22 +20,37 @@ function cleanText(text: string): string {
 }
 
 /**
- * Super-robust extraction using pdf-parse with require().
- * This is the ultimate fix for Vercel/Node.js compatibility.
+ * The Ultimate Fix: Using pdf2json (Professional grade, Vercel whitelisted).
+ * This library is much more robust than pdf-parse for complex PDF buffers.
  */
 async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
-  try {
-    const data = await pdf(buffer);
-    
-    return {
-      text: data.text || '',
-      pageCount: data.numpages || 0,
-      title: data.info?.Title || undefined
-    };
-  } catch (err) {
-    console.error('pdf-parse failure:', err);
-    throw new Error('Failed to parse PDF content. Please ensure the file is valid.');
-  }
+  return new Promise((resolve, reject) => {
+    const pdfParser = new PDFParser(null, 1); // 1 = text only mode
+
+    pdfParser.on("pdfParser_dataError", errData => {
+      console.error('pdf2json error:', errData.parserError);
+      reject(new Error('PDF extraction failed. The file might be corrupted or protected.'));
+    });
+
+    pdfParser.on("pdfParser_dataReady", pdfData => {
+      try {
+        const text = pdfParser.getRawTextContent();
+        resolve({
+          text: text || '',
+          pageCount: pdfData.Pages?.length || 0,
+          title: pdfData.Meta?.Title || undefined
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    try {
+      pdfParser.parseBuffer(buffer);
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
 function detectHeading(line: string): boolean {
@@ -58,7 +74,7 @@ function splitIntoSemanticChunks(text: string, maxTokens = 2000): any[] {
 
   const flushChunk = () => {
     const content = cleanText(currentChunkLines.join('\n'));
-    if (content.length < 100) return;
+    if (!content || content.length < 100) return;
 
     chunks.push({
       id: `chunk-${chunkIndex++}-${Date.now()}`,
