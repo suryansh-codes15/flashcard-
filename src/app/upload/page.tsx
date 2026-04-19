@@ -85,17 +85,57 @@ export default function UploadPage() {
     setError('');
     setStage('uploading');
     setProgress(5);
+    const deckId = generateId();
     setStatusMsg('Extracting tactical data from PDF...');
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      const uploadData = await uploadRes.json();
+      const MAX_DIRECT_SIZE = 4 * 1024 * 1024; // 4MB (Vercel Limit safe)
+      const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB (User requested limit)
 
-      if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed');
-      
-      const deckId = generateId();
+      if (file.size > MAX_TOTAL_SIZE) {
+        throw new Error('File too large. Maximum size is 10MB.');
+      }
+
+      let uploadData;
+
+      // --- 🌩️ HYBRID UPLOAD LOGIC ---
+      if (file.size > MAX_DIRECT_SIZE) {
+        setStatusMsg('Beaming to Secure Cloud (Bypassing Limits)...');
+        setProgress(15);
+        
+        // 1. Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const cloudPath = `${deckId}.${fileExt}`;
+        
+        const { data: uploadResult, error: uploadErr } = await supabase.storage
+          .from('pdfs')
+          .upload(cloudPath, file, { upsert: true });
+
+        if (uploadErr) throw new Error(`Cloud Upload Error: ${uploadErr.message}. Make sure your "pdfs" bucket exists and is Public.`);
+
+        // 2. Get Public URL
+        const { data: urlData } = supabase.storage.from('pdfs').getPublicUrl(cloudPath);
+        const fileUrl = urlData.publicUrl;
+
+        // 3. Send URL to API
+        const apiRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileUrl, name: file.name })
+        });
+        uploadData = await apiRes.json();
+        if (!apiRes.ok) throw new Error(uploadData.error || 'Cloud processing failed');
+      } 
+      else {
+        // Direct upload for small files
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+        uploadData = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed');
+      }
+
+      setNewDeckId(deckId);
       const deck = {
         id: deckId,
         name: file.name.replace('.pdf', '').replace(/[-_]/g, ' '),
@@ -343,7 +383,7 @@ export default function UploadPage() {
                       {file ? file.name : 'Engine ready · Drop your PDF to begin'}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
-                      {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · Ready for Forge` : 'Drop PDF or Click to browse'}
+                      {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · Ready for Forge` : 'Drop PDF (Max 10 MB) or Click to browse'}
                     </p>
                   </div>
                   {file && (

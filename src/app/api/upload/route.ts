@@ -5,23 +5,49 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
+    let buffer: Buffer;
+    let fileName: string;
+    let fileSize: number;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    const contentType = request.headers.get('content-type') || '';
+
+    // CASE 1: Cloud-Stored File (JSON with URL)
+    if (contentType.includes('application/json')) {
+      const { fileUrl, name } = await request.json();
+      if (!fileUrl) return NextResponse.json({ error: 'No URL provided' }, { status: 400 });
+      
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error('Failed to fetch file from cloud storage');
+      
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      fileName = name || 'cloud-document.pdf';
+      fileSize = buffer.length;
+    } 
+    // CASE 2: Direct Upload (FormData)
+    else {
+      const formData = await request.formData();
+      const file = formData.get('file') as File | null;
+
+      if (!file) {
+        return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      }
+
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 });
+      }
+
+      buffer = Buffer.from(await file.arrayBuffer());
+      fileName = file.name;
+      fileSize = file.size;
     }
 
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 });
+    // ENFORCE 10MB LIMIT
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (fileSize > maxSize) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 10MB' }, { status: 400 });
     }
 
-    const maxSize = 20 * 1024 * 1024; // 20MB
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: 'File too large. Maximum size is 20MB' }, { status: 400 });
-    }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
     const { chunks, pageCount, title } = await processPDF(buffer);
 
     if (chunks.length === 0) {
@@ -35,7 +61,7 @@ export async function POST(request: NextRequest) {
       chunks,
       pageCount,
       title,
-      fileName: file.name,
+      fileName: fileName,
     });
   } catch (err) {
     console.error('PDF upload error:', err);
