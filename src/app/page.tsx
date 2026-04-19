@@ -137,24 +137,7 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-antigravity">
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md">
-              <span className="text-sm">🧠</span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">2.4M cards reviewed</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-full backdrop-blur-md shadow-[0_0_20px_rgba(249,115,22,0.15)]">
-              <span className="text-sm">🔥</span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">14 DAY STREAK</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md">
-              <span className="text-sm">⭐</span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">98% retention</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md">
-              <span className="text-sm">📚</span>
-              <span className="text-xs font-bold text-white uppercase tracking-wider">50K decks created</span>
-            </div>
-          </div>
+
           
           <div className="flex items-end justify-center w-full gap-8 mt-12">
             <div className="hidden md:flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('sparky')}>
