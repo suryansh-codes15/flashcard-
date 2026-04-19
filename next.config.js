@@ -1,10 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['pdf2json', 'sharp', 'pdf-parse'],
-  outputFileTracingExcludes: {
-    "/*": ["./node_modules/canvas/**/*", "./node_modules/jsdom/**/*", "./node_modules/pdfjs-dist/**/*"],
-    "/api/**/*": ["./node_modules/canvas/**/*", "./node_modules/jsdom/**/*", "./node_modules/pdfjs-dist/**/*"]
-  },
   experimental: {},
   webpack: (config, { isServer }) => {
     if (isServer) {
@@ -12,7 +8,6 @@ const nextConfig = {
     }
     return config;
   },
-  // CSP disabled temporarily to debug styling issue
 };
 
 module.exports = nextConfig;

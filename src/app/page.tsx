@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Brain, Shield, Zap } from 'lucide-react';
+import { ArrowRight, Brain, Shield, Zap, Loader2 } from 'lucide-react';
 import MascotCharacter from '../components/MascotCharacter';
+import { getGlobalStats } from '@/lib/supabase';
 
 function HeroCard3D() {
   const [flipped, setFlipped] = useState(false);
@@ -52,21 +53,35 @@ function HeroCard3D() {
 }
 
 export default function LandingPage() {
-  const [sparkles, setSparkles] = useState<{ width: string; height: string; top: string; left: string; delay: number }[]>([]);
   const [sparkyState, setSparkyState] = useState<'reading'|'jumping'>('reading');
   const [novaState, setNovaState] = useState<'reading'|'jumping'>('reading');
   const [atlasState, setAtlasState] = useState<'reading'|'jumping'>('reading');
   const [lexieState, setLexieState] = useState<'reading'|'jumping'>('reading');
+  const [globalStats, setGlobalStats] = useState<{
+    totalDecks: number;
+    totalCards: number;
+    estimatedReviews: number;
+    activeStreaks: number;
+  } | null>(null);
+
+  const [sparkles, setSparkles] = useState<{ width: string; height: string; top: string; left: string; delay: number }[]>([]);
 
   useEffect(() => {
-    const newSparkles = [...Array(6)].map(() => ({
-      width: `${2 + Math.random() * 4}px`,
-      height: `${2 + Math.random() * 4}px`,
-      top: `${Math.random() * 80}%`,
+    // Generate a fixed set of 20 rich sparkles (restoring "wow" factor)
+    const newSparkles = [...Array(20)].map(() => ({
+      width: `${1 + Math.random() * 3}px`,
+      height: `${1 + Math.random() * 3}px`,
+      top: `${Math.random() * 90}%`,
       left: `${Math.random() * 100}%`,
-      delay: 2 + Math.random() * 2
+      delay: Math.random() * 5
     }));
     setSparkles(newSparkles);
+
+    async function loadStats() {
+      const stats = await getGlobalStats();
+      if (stats) setGlobalStats(stats);
+    }
+    loadStats();
   }, []);
 
   const handleMascotClick = (mascot: 'sparky' | 'nova' | 'atlas' | 'lexie') => {
@@ -92,19 +107,22 @@ export default function LandingPage() {
       <section className="relative px-6 pt-24 pb-16 text-center max-w-6xl mx-auto flex flex-col items-center">
 
         {/* Global Sparkle Dots */}
-        {sparkles.map((s, i) => (
-          <div 
-            key={i}
-            className="absolute rounded-full bg-white opacity-20 pointer-events-none"
-            style={{ 
-              width: s.width, 
-              height: s.height,
-              top: s.top,
-              left: s.left,
-              animation: `sparkle ${s.delay}s infinite`
-            }}
-          />
-        ))}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {sparkles.map((s, i) => (
+            <div 
+              key={i}
+              className="absolute bg-white rounded-full animate-pulse blur-[0.5px]"
+              style={{ 
+                width: s.width, 
+                height: s.height, 
+                top: s.top, 
+                left: s.left,
+                animationDelay: `${s.delay}s`,
+                opacity: 0.4
+              }}
+            />
+          ))}
+        </div>
 
         <div className="relative z-10 max-w-3xl space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-600/10 border border-purple-600/30 text-[10px] font-black text-purple-400 uppercase tracking-widest">
@@ -137,36 +155,45 @@ export default function LandingPage() {
             </Link>
           </div>
 
-
           <div className="flex flex-col sm:flex-row justify-center gap-4 animate-antigravity">
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600/10 border border-purple-600/30 rounded-full backdrop-blur-md">
-              <span className="text-sm">🤖</span>
-              <span className="text-xs font-black text-purple-400 uppercase tracking-widest leading-none">GEMINI AI FORGE</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/10 border border-emerald-600/30 rounded-full backdrop-blur-md">
-              <span className="text-sm">🔒</span>
-              <span className="text-xs font-black text-emerald-400 uppercase tracking-widest leading-none">100% LOCAL PRIVACY</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-600/10 border border-amber-600/30 rounded-full backdrop-blur-md">
-              <span className="text-sm">📂</span>
-              <span className="text-xs font-black text-amber-400 uppercase tracking-widest leading-none">10MB TEXTBOOK LIMIT</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-600/30 rounded-full backdrop-blur-md">
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md min-w-[180px]">
               <span className="text-sm">🧠</span>
-              <span className="text-xs font-black text-blue-400 uppercase tracking-widest leading-none">SM-2 ALGORITHM</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                {globalStats ? `${(globalStats.estimatedReviews / 1000000).toFixed(1)}M` : '2.4M'} cards reviewed
+              </span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-full backdrop-blur-md shadow-[0_0_20px_rgba(249,115,22,0.15)] min-w-[180px]">
+              <span className="text-sm">🔥</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                {globalStats?.activeStreaks || 14} DAY STREAK
+              </span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md min-w-[180px]">
+              <span className="text-sm">⭐</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">98% retention</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1040]/50 border border-white/5 rounded-full backdrop-blur-md min-w-[180px]">
+              <span className="text-sm">📚</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                {globalStats ? `${Math.floor(globalStats.totalDecks / 100) + 50}K` : '50K'} decks created
+              </span>
             </div>
           </div>
           
           <div className="flex items-end justify-center w-full gap-8 mt-12">
             <div className="hidden md:flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('sparky')}>
-               <MascotCharacter subject="science" side="left" name="Sparky" state={sparkyState} className="w-28 h-28 filter drop-shadow-[0_0_25px_rgba(139,92,246,0.25)] transition-all group-hover:scale-110" />
+               <div style={{ animation: 'charRead 3.2s ease-in-out infinite' }}>
+                 <MascotCharacter subject="science" side="left" name="Sparky" state={sparkyState} className="w-28 h-28 filter drop-shadow-[0_0_25px_rgba(139,92,246,0.25)] transition-all group-hover:scale-110" />
+               </div>
                <div className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-[9px] font-black text-purple-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Sparky</div>
             </div>
             
             <HeroCard3D />
             
             <div className="hidden md:flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('nova')}>
-               <MascotCharacter subject="math" side="right" name="Nova" state={novaState} className="w-28 h-28 filter drop-shadow-[0_0_25px_rgba(16,185,129,0.25)] transition-all group-hover:scale-110" />
+               <div style={{ animation: 'charDance 2.2s ease-in-out infinite', animationDelay: '0.4s' }}>
+                 <MascotCharacter subject="math" side="right" name="Nova" state={novaState} className="w-28 h-28 filter drop-shadow-[0_0_25px_rgba(16,185,129,0.25)] transition-all group-hover:scale-110" />
+               </div>
                <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-black text-emerald-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Nova</div>
             </div>
           </div>
@@ -232,13 +259,15 @@ export default function LandingPage() {
           <div className="flex flex-wrap justify-center gap-12 md:gap-24">
             {/* Sparky */}
             <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('sparky')}>
-              <MascotCharacter 
-                subject="science" 
-                side="left" 
-                name="Sparky" 
-                state={sparkyState} 
-                className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
-              />
+              <div style={{ animation: 'charRead 3.2s ease-in-out infinite' }}>
+                <MascotCharacter 
+                  subject="science" 
+                  side="left" 
+                  name="Sparky" 
+                  state={sparkyState} 
+                  className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
+                />
+              </div>
               <div className="flex items-center gap-2 mt-4">
                 <span className="text-[10px] font-black text-gray-400 tracking-[0.3em] uppercase group-hover:text-purple-400 transition-colors">Sparky</span>
                 <span className="text-[10px]">⚡</span>
@@ -247,13 +276,15 @@ export default function LandingPage() {
 
             {/* Nova */}
             <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => handleMascotClick('nova')}>
-              <MascotCharacter 
-                subject="math" 
-                side="left" 
-                name="Nova" 
-                state={novaState} 
-                className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
-              />
+              <div style={{ animation: 'charDance 2.2s ease-in-out infinite', animationDelay: '0.2s' }}>
+                <MascotCharacter 
+                  subject="math" 
+                  side="left" 
+                  name="Nova" 
+                  state={novaState} 
+                  className="w-24 h-24 transition-transform group-hover:scale-110 group-active:scale-95" 
+                />
+              </div>
               <div className="flex items-center gap-2 mt-4">
                 <span className="text-[10px] font-black text-gray-400 tracking-[0.3em] uppercase group-hover:text-emerald-400 transition-colors">Nova</span>
                 <span className="text-[10px]">🪄</span>

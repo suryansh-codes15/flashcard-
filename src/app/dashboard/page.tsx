@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Loader2 } from 'lucide-react';
 import { useFlashcardStore } from '@/store/flashcard-store';
@@ -20,7 +20,26 @@ function getGreeting(name: string): string {
   return `Still at it, ${name}! 🌙`;
 }
 
-function StatCard({ label, value, delay, color = 'border-purple-500' }: { label: string; value: string | number; delay: string; color?: string }) {
+const getSubjectColor = (subject: string) => {
+  switch (subject) {
+    case 'math': return 'from-[#0a2c1c] to-[#134e35] border-emerald-500/20';
+    case 'geography': return 'from-[#0c2240] to-[#1e3a5f] border-blue-500/20';
+    case 'history': return 'from-[#2c1000] to-[#4a1c00] border-amber-500/20';
+    case 'language': return 'from-[#2c0020] to-[#4a0030] border-pink-500/20';
+    default: return 'from-[#1a0f3a] to-[#2d1b69] border-purple-500/20';
+  }
+};
+
+const getSubjectName = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('math') || n.includes('calc')) return 'math';
+  if (n.includes('geo')  || n.includes('map'))  return 'geography';
+  if (n.includes('hist') || n.includes('war'))  return 'history';
+  if (n.includes('phrase') || n.includes('lang')) return 'language';
+  return 'science';
+};
+
+const StatCard = ({ label, value, delay, color = 'border-purple-500' }: { label: string; value: string | number; delay: string; color?: string }) => {
   return (
     <div 
       className={`p-6 rounded-2xl flex flex-col justify-center bg-[#1a1040] border-t-4 ${color} border-l border-r border-b border-white/5 shadow-2xl animate-fade-up relative overflow-hidden group`}
@@ -31,7 +50,7 @@ function StatCard({ label, value, delay, color = 'border-purple-500' }: { label:
       <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest relative z-10">{label}</span>
     </div>
   );
-}
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -134,25 +153,6 @@ export default function DashboardPage() {
 
   if (!hydrated) return null;
   if (!profile) return <ProfilePrompt />;
-
-  const getSubjectColor = (subject: string) => {
-    switch (subject) {
-      case 'math': return 'from-[#0a2c1c] to-[#134e35] border-emerald-500/20';
-      case 'geography': return 'from-[#0c2240] to-[#1e3a5f] border-blue-500/20';
-      case 'history': return 'from-[#2c1000] to-[#4a1c00] border-amber-500/20';
-      case 'language': return 'from-[#2c0020] to-[#4a0030] border-pink-500/20';
-      default: return 'from-[#1a0f3a] to-[#2d1b69] border-purple-500/20';
-    }
-  };
-
-  const getSubjectName = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes('math') || n.includes('calc')) return 'math';
-    if (n.includes('geo')  || n.includes('map'))  return 'geography';
-    if (n.includes('hist') || n.includes('war'))  return 'history';
-    if (n.includes('phrase') || n.includes('lang')) return 'language';
-    return 'science';
-  };
 
   return (
     <div className="min-h-screen py-10 px-6 max-w-7xl mx-auto space-y-12">

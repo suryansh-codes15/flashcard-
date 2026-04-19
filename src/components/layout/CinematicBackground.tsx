@@ -2,7 +2,7 @@
 
 import { useEffect, useState, memo } from 'react';
 
-function CinematicBackgroundComponent() {
+export default function CinematicBackground() {
   const [stars, setStars] = useState<{ id: number; left: string; top: string; size: string; delay: string; duration: string }[]>([]);
   const [particles, setParticles] = useState<{ id: string; x: string; dx: number; color: string; duration: string; size: string }[]>([]);
 
@@ -123,5 +123,3 @@ function CinematicBackgroundComponent() {
   );
 }
 
-const CinematicBackground = memo(CinematicBackgroundComponent);
-export default CinematicBackground;

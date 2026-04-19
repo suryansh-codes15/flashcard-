@@ -12,7 +12,7 @@ interface Props {
   className?: string;
 }
 
-function MascotCharacterComponent({ side, name, subject, state, onClick, className = "" }: Props) {
+export default function MascotCharacter({ side, name, subject, state, onClick, className = "" }: Props) {
   // Enhanced Color Map for all characters
   const colors = {
     science:   { body: '#8b5cf6', face: '#fbbf24' }, // Sparky (Purple)
@@ -207,5 +207,3 @@ function MascotCharacterComponent({ side, name, subject, state, onClick, classNa
   );
 }
 
-const MascotCharacter = memo(MascotCharacterComponent);
-export default MascotCharacter;
