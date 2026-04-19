@@ -2,6 +2,7 @@ import Groq from 'groq-sdk';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { auditLog } from './logger';
 import type { PDFChunk, Flashcard, CardType, ClassLevel, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
@@ -131,20 +132,42 @@ async function generateCardsForChunk(
 
   const text = completion.choices[0]?.message?.content || '{}';
 
-  // EMERGENCY AI TRACE
-  try {
-    fs.writeFileSync(path.join(process.cwd(), 'debug_ai_response.txt'), text);
-    console.log(`[DEBUG] Saved AI response to debug_ai_response.txt`);
-  } catch (err) {
-    console.error('[DEBUG] Failed to save AI response:', err);
-  }
+  // DEEP AUDIT: Save raw AI response to the permanent audit log
+  auditLog('ai_raw_response', {
+    chunk_length: content.length,
+    target_count: targetCount,
+    raw_text: text
+  });
 
-  const parsed = JSON.parse(text);
-  const cards = parsed.cards || (Array.isArray(parsed) ? parsed : []);
-  
-  // Force limit in case AI ignores instruction
-  const filtered = cards.filter((c: RawCard) => c.front && c.back);
-  return filtered.slice(0, targetCount);
+  try {
+    const parsed = JSON.parse(text);
+    
+    // FUZZY PARSING: Look for cards in 'cards', 'flashcards', or find first array
+    let cards = parsed.cards || parsed.flashcards || parsed.items || [];
+    
+    if (cards.length === 0) {
+      // If we still found nothing, check if the object ITSELF is an array
+      if (Array.isArray(parsed)) {
+        cards = parsed;
+      } else {
+        // Last resort: find the first property that IS an array
+        for (const key in parsed) {
+          if (Array.isArray(parsed[key]) && parsed[key].length > 0) {
+            cards = parsed[key];
+            break;
+          }
+        }
+      }
+    }
+
+    auditLog('ai_parsed_count', { count: cards.length });
+    
+    const filtered = cards.filter((c: RawCard) => c.front && c.back);
+    return filtered.slice(0, targetCount);
+  } catch (err: any) {
+    auditLog('ai_parse_error', { error: err.message, text_preview: text.substring(0, 100) });
+    throw err;
+  }
 }
 
 function deduplicateCards(cards: RawCard[]): RawCard[] {

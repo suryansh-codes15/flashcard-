@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { generateFlashcards } from '@/lib/ai-generator';
 import { z } from 'zod';
+import { auditLog } from '@/lib/logger';
 import type { Flashcard, CardTemplateKey, ColorPalette } from '@/types';
 
 export const runtime = 'nodejs';
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
       }
 
       try {
+        auditLog('stream_start', { chunk_count: chunks.length, fileName, templateId });
         send({ type: 'start', total: chunks.length });
 
         const flashcards = await generateFlashcards(
@@ -123,9 +125,11 @@ export async function POST(request: NextRequest) {
           }
         );
 
+        auditLog('stream_complete', { flashcard_count: flashcards.length });
         send({ type: 'progress', progress: 98, message: 'Finalizing your premium deck...' });
         send({ type: 'complete', flashcards, progress: 100 });
-      } catch (err) {
+      } catch (err: any) {
+        auditLog('stream_error', { error: err.message || 'Unknown' });
         console.warn('AI generation failed — loading offline premium deck:', err);
         send({ type: 'progress', progress: 50, message: '🎨 Loading offline premium deck...' });
 
