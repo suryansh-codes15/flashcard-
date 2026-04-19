@@ -161,8 +161,5 @@ export default function FlashCard3D({
 
       </div>
     </div>
-
-      </div>
-    </div>
   );
 }
