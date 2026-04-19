@@ -10,12 +10,15 @@ export default function ProfilePrompt() {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const setProfile = useFlashcardStore((state) => state.setProfile);
+  const resetStore = useFlashcardStore((state) => state.resetStore);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     setIsLoading(true);
+    // 1. Clear previous local history to ensure isolation
+    resetStore();
     try {
       const { data, error } = await supabase
         .from('profiles')

@@ -84,6 +84,7 @@ interface FlashcardStore {
     getDueCount: (deckId?: string) => number;
     setProfile: (profile: { id: string; name: string; xp: number; streak: number }) => void;
     syncWithDB: () => Promise<void>;
+    resetStore: () => void;
 }
 
 export const useFlashcardStore = create<FlashcardStore>()(
@@ -101,6 +102,14 @@ export const useFlashcardStore = create<FlashcardStore>()(
                 // This will be implemented fully once DB service is ready
                 // but we add the placeholder for now
             },
+
+            resetStore: () => set({ 
+                decks: [], 
+                flashcards: [], 
+                sessions: [], 
+                xp: 0,
+                profile: null 
+            }),
 
             addDeck: (deck) => set((state) => ({ decks: [...state.decks, deck] })),
 

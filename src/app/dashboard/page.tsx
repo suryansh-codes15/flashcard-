@@ -88,42 +88,41 @@ export default function DashboardPage() {
           templateId: d.template_id,
         }));
 
-        // We use a small optimization here: only update if lengths differ or someone refreshed
-        if (mappedDecks.length !== decks.length) {
-            useFlashcardStore.setState({ decks: mappedDecks });
-            
-            // Also fetch cards for these decks to populate local store
-            const { data: dbCards } = await supabase
-                .from('flashcards')
-                .select('*')
-                .in('deck_id', mappedDecks.map(d => d.id));
-            
-            if (dbCards) {
-                const mappedCards: Flashcard[] = dbCards.map(c => ({
-                    id: c.id,
-                    deckId: c.deck_id,
-                    front: c.front,
-                    back: c.back,
-                    type: c.type,
-                    difficulty: c.difficulty,
-                    level: c.level,
-                    templateKey: c.template_key,
-                    colorPalette: c.color_palette,
-                    sourceContext: c.source_context,
-                    insight: c.insight,
-                    example: c.example,
-                    mistake: c.mistake,
-                    options: c.options,
-                    correctAnswer: c.correct_answer,
-                    createdAt: c.created_at,
-                    interval: c.interval,
-                    easeFactor: c.ease_factor,
-                    nextReviewDate: c.next_review_date,
-                    reviewCount: c.review_count,
-                    lapseCount: c.lapse_count,
-                }));
-                useFlashcardStore.setState({ flashcards: mappedCards });
-            }
+        // Unconditionally overwrite the store with cloud data for the active profile
+        // this ensures that switching profiles correctly resets the view to the new user's content.
+        useFlashcardStore.setState({ decks: mappedDecks });
+        
+        // Also fetch cards for these decks to populate local store
+        const { data: dbCards } = await supabase
+            .from('flashcards')
+            .select('*')
+            .in('deck_id', mappedDecks.map(d => d.id));
+        
+        if (dbCards) {
+            const mappedCards: Flashcard[] = dbCards.map(c => ({
+                id: c.id,
+                deckId: c.deck_id,
+                front: c.front,
+                back: c.back,
+                type: c.type,
+                difficulty: c.difficulty,
+                level: c.level,
+                templateKey: c.template_key,
+                colorPalette: c.color_palette,
+                sourceContext: c.source_context,
+                insight: c.insight,
+                example: c.example,
+                mistake: c.mistake,
+                options: c.options,
+                correctAnswer: c.correct_answer,
+                createdAt: c.created_at,
+                interval: c.interval,
+                easeFactor: c.ease_factor,
+                nextReviewDate: c.next_review_date,
+                reviewCount: c.review_count,
+                lapseCount: c.lapse_count,
+            }));
+            useFlashcardStore.setState({ flashcards: mappedCards });
         }
       }
     } catch (err) {

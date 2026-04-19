@@ -1,5 +1,8 @@
-import PDFParser from 'pdf2json';
-import type { PDFChunk } from '@/types';
+import * as pdfjs from 'pdfjs-dist';
+
+// Use standard legacy worker for Node.js compatibility
+// In Next.js/Node, we don't necessarily need a separate worker file if we use the standard setup
+// but we must handle the pdfjs import carefully.
 
 interface ParsedPDF {
   text: string;
@@ -20,37 +23,39 @@ function cleanText(text: string): string {
 }
 
 /**
- * Rollback to pdf2json (Version 4.0.2)
- * This was the engine used when "it was working correctly".
+ * Migration: Using pdfjs-dist for robust text extraction.
+ * This fixes the "PASSWORDEXCEPTION: NO PASSWORD GIVEN" issue.
  */
-async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
-  return new Promise((resolve, reject) => {
-    const pdfParser = new (PDFParser as any)(null, 1);
-
-    pdfParser.on("pdfParser_dataError", (errData: any) => {
-      console.error('pdf2json error:', errData.parserError);
-      reject(new Error(errData.parserError || 'Failed to parse PDF Data'));
-    });
-
-    pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
-      // Version 4.x getRawTextContent() returns the text extracted
-      // based on the '1' flag in the constructor
-      const text = pdfParser.getRawTextContent();
-      const pageCount = pdfData.Pages ? pdfData.Pages.length : 0;
-      
-      resolve({
-        text: text || '',
-        pageCount,
-        title: pdfData.Meta?.Title || undefined
-      });
-    });
-
-    try {
-      pdfParser.parseBuffer(buffer);
-    } catch (err) {
-      reject(err);
-    }
+async function extractTextFromBuffer(buffer: Uint8Array): Promise<ParsedPDF> {
+  // Load the PDF document
+  const loadingTask = pdfjs.getDocument({
+    data: buffer,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: true
   });
+
+  const pdf = await loadingTask.promise;
+  const numPages = pdf.numPages;
+  let fullText = '';
+
+  for (let i = 1; i <= numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .map((item: any) => item.str)
+      .join(' ');
+    fullText += pageText + '\n\n';
+  }
+
+  // Attempt to get metadata for title
+  const metadata = await pdf.getMetadata().catch(() => null);
+
+  return {
+    text: fullText,
+    pageCount: numPages,
+    title: (metadata?.info as any)?.Title || undefined
+  };
 }
 
 function detectHeading(line: string): boolean {
