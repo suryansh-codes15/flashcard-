@@ -325,7 +325,7 @@ export default function UploadPage() {
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
-              onClick={() => inputRef.current?.click()}
+              onClick={() => stage === 'idle' && inputRef.current?.click()}
               className={`relative h-[400px] rounded-[40px] border-2 border-dashed flex flex-col items-center justify-center gap-6 cursor-pointer transition-all overflow-hidden
                 ${isDragging ? 'border-purple-500 bg-purple-500/10 scale-[1.02]' : 'border-white/10 bg-white/[0.02] hover:border-purple-500/30'}
                 ${(stage === 'uploading' || stage === 'generating') ? 'pointer-events-none' : ''}
@@ -399,7 +399,7 @@ export default function UploadPage() {
                      ))}
                   </div>
                   <button 
-                    onClick={() => router.push('/dashboard')}
+                    onClick={() => router.push(`/study/${newDeckId}`)}
                     className="mt-6 px-8 py-4 rounded-full bg-emerald-600 text-white font-black z-20 hover:scale-105 active:scale-95 transition-all w-full md:w-auto"
                   >
                     Start studying →
