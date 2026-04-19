@@ -1,9 +1,5 @@
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import pdf from 'pdf-parse';
 import type { PDFChunk } from '@/types';
-
-// Use standard legacy worker for Node.js compatibility
-// In Next.js/Node, we don't necessarily need a separate worker file if we use the standard setup
-// but we must handle the pdfjs import carefully.
 
 interface ParsedPDF {
   text: string;
@@ -24,43 +20,22 @@ function cleanText(text: string): string {
 }
 
 /**
- * Migration: Using pdfjs-dist for robust text extraction.
- * This fixes the "PASSWORDEXCEPTION: NO PASSWORD GIVEN" issue.
+ * Robust extraction using pdf-parse (Pure Node.js, zero workers).
+ * This completely avoids the "Fake Worker" issues seen with pdfjs-dist.
  */
-async function extractTextFromBuffer(buffer: Uint8Array): Promise<ParsedPDF> {
-  // Load the PDF document
-  const loadingTask = pdfjs.getDocument({
-    data: new Uint8Array(buffer),
-    useWorkerFetch: false,
-    isEvalSupported: false,
-    useSystemFonts: true,
-    disableRange: true,
-    disableStream: true,
-    disableAutoFetch: true,
-    verbosity: 0
-  });
-
-  const pdf = await loadingTask.promise;
-  const numPages = pdf.numPages;
-  let fullText = '';
-
-  for (let i = 1; i <= numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item: any) => item.str)
-      .join(' ');
-    fullText += pageText + '\n\n';
+async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
+  try {
+    const data = await pdf(buffer);
+    
+    return {
+      text: data.text || '',
+      pageCount: data.numpages || 0,
+      title: data.info?.Title || undefined
+    };
+  } catch (err) {
+    console.error('pdf-parse failure:', err);
+    throw new Error('Failed to parse PDF content. Please ensure the file is valid.');
   }
-
-  // Attempt to get metadata for title
-  const metadata = await pdf.getMetadata().catch(() => null);
-
-  return {
-    text: fullText,
-    pageCount: numPages,
-    title: (metadata?.info as any)?.Title || undefined
-  };
 }
 
 function detectHeading(line: string): boolean {
@@ -130,7 +105,7 @@ export async function processPDF(buffer: Buffer): Promise<{
   pageCount: number;
   title?: string;
 }> {
-  const { text, pageCount, title } = await extractTextFromBuffer(new Uint8Array(buffer));
+  const { text, pageCount, title } = await extractTextFromBuffer(buffer);
   const cleanedText = cleanText(text);
   const chunks = splitIntoSemanticChunks(cleanedText);
 
