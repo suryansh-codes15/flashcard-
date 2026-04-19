@@ -1,4 +1,5 @@
-import pdf from 'pdf-parse';
+// @ts-ignore
+import * as pdf from 'pdf-parse';
 import type { PDFChunk } from '@/types';
 
 interface ParsedPDF {
@@ -25,7 +26,8 @@ function cleanText(text: string): string {
  */
 async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
   try {
-    const data = await pdf(buffer);
+    const parse = (pdf as any).default || pdf;
+    const data = await parse(buffer);
     
     return {
       text: data.text || '',
