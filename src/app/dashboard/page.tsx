@@ -111,7 +111,6 @@ export default function DashboardPage() {
                 colorPalette: c.color_palette,
                 sourceContext: c.source_context,
                 insight: c.insight,
-                concept: c.concept,
                 example: c.example,
                 mistake: c.mistake,
                 options: c.options,

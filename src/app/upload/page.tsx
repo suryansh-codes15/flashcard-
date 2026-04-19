@@ -182,7 +182,6 @@ export default function UploadPage() {
                     insight: c.insight,
                     example: c.example,
                     mistake: c.mistake,
-                    concept: c.concept || '',
                     options: c.options,
                     correct_answer: c.correctAnswer,
                     interval: c.interval,
