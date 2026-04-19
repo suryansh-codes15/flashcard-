@@ -141,7 +141,7 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 mb-10">
-            <Link href="/dashboard">
+            <Link href="/upload">
               <button 
                 className="px-10 py-5 rounded-full bg-purple-600 text-white font-black text-lg shadow-[0_15px_40px_-10px_rgba(124,58,237,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
               >
@@ -149,7 +149,7 @@ export default function LandingPage() {
                 <ArrowRight className="w-5 h-5" />
               </button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/library">
               <button className="px-10 py-5 rounded-full border-2 border-purple-600/30 text-purple-400 font-black text-lg hover:bg-purple-600/5 transition-all">
                 Browse collections
               </button>
