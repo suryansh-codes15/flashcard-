@@ -34,7 +34,9 @@ async function extractTextFromBuffer(buffer: Uint8Array): Promise<ParsedPDF> {
     useWorkerFetch: false,
     isEvalSupported: false,
     useSystemFonts: true,
-    disableWorker: true,
+    disableRange: true,
+    disableStream: true,
+    disableAutoFetch: true,
     verbosity: 0
   });
 
