@@ -253,7 +253,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         accuracy: sessionStats.total > 0 ? Math.round((sessionStats.correct / sessionStats.total) * 100) : 0,
         weakTopics: finalWeak,
         strongTopics: finalStrong,
-        deckName: deck.title
+        deckName: deck.title || deck.name || 'this subject'
       })
     })
     .then(res => res.json())
@@ -378,7 +378,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     else insight = "This is where the real growth happens. Let's tackle those mistakes head-on.";
 
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 text-center space-y-10 animate-fade-in dashboard-scroll overflow-y-auto">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 pt-24 text-center space-y-10 animate-fade-in dashboard-scroll overflow-y-auto">
         
         {/* TOP SECTION: MASCOT & XP CELEBRATION */}
         <div className="relative group perspective-2000 pointer-events-none flex flex-col items-center">
@@ -395,7 +395,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
               />
              
              {/* THE IMPROVED GLASSMORPHIC SPEECH BUBBLE */}
-             <div className="absolute -right-16 md:-right-48 -top-12 w-72 md:w-80 bg-white/10 backdrop-blur-2xl border border-white/20 p-6 rounded-[32px] rounded-bl-none shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-fade-up z-40">
+             <div className="absolute -right-20 md:-right-52 top-0 w-72 md:w-80 bg-white/10 backdrop-blur-2xl border border-white/20 p-6 rounded-[32px] rounded-bl-none shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-fade-up z-40">
                 {/* Speech Bubble Tail */}
                 <div className="absolute -bottom-4 left-0 w-8 h-8 bg-white/10 backdrop-blur-2xl border-l border-b border-white/20 rotate-45 -translate-x-1/2" />
                 
@@ -415,7 +415,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
              </div>
 
              {/* VICTORIOUS TROPHY */}
-             <div className="absolute -left-12 md:-left-32 -top-6 animate-bounce z-40 transition-transform duration-700 hover:rotate-12">
+             <div className="absolute -left-16 md:-left-36 top-4 animate-bounce z-40 transition-transform duration-700 hover:rotate-12">
                 <div className="relative">
                   <div className="absolute inset-0 bg-yellow-400/20 blur-2xl rounded-full animate-pulse" />
                   <Trophy className="w-20 h-20 md:w-24 md:h-24 text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.6)]" />

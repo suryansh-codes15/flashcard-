@@ -162,8 +162,10 @@ async function generateCardsForChunk(
 ): Promise<RawCard[]> {
   const template = TEMPLATES[templateId] || TEMPLATES.concept;
   
-  // Specific instruction for card count
-  const countInstruction = `CRITICAL: You MUST generate EXACTLY ${targetCount} unique flashcards for this content. No more, no less.`;
+  // Specific instruction for card count - Using a more flexible range to encourage extraction
+  const minCount = Math.max(3, Math.floor(targetCount * 0.8));
+  const maxCount = Math.max(targetCount, 8);
+  const countInstruction = `CRITICAL EXTRACTION: You MUST identify and extract AT LEAST ${minCount} unique flashcards. Aim for ${maxCount} if the content is rich. Do not skip important details.`;
   
   const prompt = `${template}\n\n${countInstruction}\n\nCONTENT:\n${content}`;
 
@@ -216,7 +218,9 @@ async function generateCardsForChunk(
     auditLog('ai_parsed_count', { count: cards.length });
     
     const filtered = cards.filter((c: RawCard) => c.front && c.back);
-    return filtered.slice(0, targetCount);
+    // REMOVED: Aggressive slicing. We now allow chunks to over-deliver 
+    // to compensate for dry chunks.
+    return filtered;
   } catch (err: any) {
     auditLog('ai_parse_error', { error: err.message, text_preview: text.substring(0, 100) });
     throw err;
@@ -243,9 +247,12 @@ export async function generateFlashcards(
 ): Promise<Flashcard[]> {
   const allRawCards: RawCard[] = [];
 
-  // Determine total target count (Default to 20 to be safe within [10, 25])
-  const TOTAL_TARGET = 20;
-  const targetPerChunk = Math.max(2, Math.floor(TOTAL_TARGET / chunks.length));
+  // Determine total target count - Re-tuned to 30 for higher density
+  const TOTAL_TARGET = 30;
+  const envCardsPerChunk = parseInt(process.env.CARDS_PER_CHUNK || '6', 10);
+  
+  // We calculate a healthy target per chunk but ensure it never drops below the env setting or 4
+  const targetPerChunk = Math.max(envCardsPerChunk, Math.ceil(TOTAL_TARGET / chunks.length), 4);
 
   // Process chunks in parallel with a smart limit to avoid TPM bottlenecks
   const CONCURRENCY_LIMIT = 3;
