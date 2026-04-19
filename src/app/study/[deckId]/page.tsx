@@ -516,6 +516,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         <div className="md:hidden flex flex-col items-center gap-2 pb-12">
             <MascotCharacter 
               subject="science" 
+              side="left"
               name="Sparky" 
               state={sparkyState} 
               className="w-12 h-12" 
