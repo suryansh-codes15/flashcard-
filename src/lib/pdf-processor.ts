@@ -126,7 +126,7 @@ export async function processPDF(buffer: Buffer): Promise<{
   pageCount: number;
   title?: string;
 }> {
-  const { text, pageCount, title } = await extractTextFromBuffer(buffer);
+  const { text, pageCount, title } = await extractTextFromBuffer(new Uint8Array(buffer));
   const cleanedText = cleanText(text);
   const chunks = splitIntoSemanticChunks(cleanedText);
 
