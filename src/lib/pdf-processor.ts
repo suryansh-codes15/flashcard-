@@ -34,7 +34,26 @@ async function extractTextFromBuffer(buffer: Buffer): Promise<ParsedPDF> {
 
     pdfParser.on("pdfParser_dataReady", pdfData => {
       try {
-        const text = pdfParser.getRawTextContent();
+        // Robust manual extraction loop
+        let text = "";
+        if (pdfData.Pages && Array.isArray(pdfData.Pages)) {
+          pdfData.Pages.forEach((page: any) => {
+            if (page.Texts && Array.isArray(page.Texts)) {
+              page.Texts.forEach((t: any) => {
+                if (t.R && t.R[0] && t.R[0].T) {
+                  text += decodeURIComponent(t.R[0].T) + " ";
+                }
+              });
+            }
+            text += "\n";
+          });
+        }
+
+        // Fallback to getRawTextContent if manual extraction yields little
+        if (text.trim().length < 50) {
+          text = pdfParser.getRawTextContent() || text;
+        }
+
         resolve({
           text: text || '',
           pageCount: pdfData.Pages?.length || 0,
@@ -74,7 +93,7 @@ function splitIntoSemanticChunks(text: string, maxTokens = 2000): any[] {
 
   const flushChunk = () => {
     const content = cleanText(currentChunkLines.join('\n'));
-    if (!content || content.length < 100) return;
+    if (!content || content.length < 40) return;
 
     chunks.push({
       id: `chunk-${chunkIndex++}-${Date.now()}`,
