@@ -6,7 +6,8 @@ import { auditLog } from './logger';
 import type { PDFChunk, Flashcard, CardType, ClassLevel, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const PRIMARY_MODEL = 'llama-3.1-8b-instant';
+const FALLBACK_MODEL = 'llama3-8b-8192';
 
 // Template selection rules strictly following the new 8-type system
 const TEMPLATE_RULES = `
@@ -119,16 +120,37 @@ async function generateCardsForChunk(
   
   const prompt = `${template}\n\n${countInstruction}\n\nCONTENT:\n${content}`;
 
-  const completion = await groq.chat.completions.create({
-    messages: [
-      { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\nTARGET CLASS LEVEL: ${classLevel.toUpperCase()}` },
-      { role: 'user', content: prompt },
-    ],
-    model: GROQ_MODEL,
-    response_format: { type: 'json_object' },
-    temperature: 0.65,
-    max_tokens: 2500,
-  });
+  const prompt = `${template}\n\n${countInstruction}\n\nCONTENT:\n${content}`;
+
+  let completion;
+  try {
+    completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\nTARGET CLASS LEVEL: ${classLevel.toUpperCase()}` },
+        { role: 'user', content: prompt },
+      ],
+      model: PRIMARY_MODEL,
+      response_format: { type: 'json_object' },
+      temperature: 0.65,
+      max_tokens: 2500,
+    });
+  } catch (err: any) {
+    if (err.status === 429) {
+      auditLog('ai_rate_limit_fallback', { model: FALLBACK_MODEL });
+      completion = await groq.chat.completions.create({
+        messages: [
+          { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\nTARGET CLASS LEVEL: ${classLevel.toUpperCase()}` },
+          { role: 'user', content: prompt },
+        ],
+        model: FALLBACK_MODEL,
+        response_format: { type: 'json_object' },
+        temperature: 0.65,
+        max_tokens: 2500,
+      });
+    } else {
+      throw err;
+    }
+  }
 
   const text = completion.choices[0]?.message?.content || '{}';
 
@@ -217,7 +239,8 @@ export async function generateFlashcards(
       // Pass the distributed target count
       const rawCards = await generateCardsForChunk(chunk.content, templateId, classLevel, targetPerChunk);
       chunkResults[i] = rawCards;
-    } catch (err) {
+    } catch (err: any) {
+      auditLog('chunk_process_failed', { chunk: i + 1, error: err.message || 'Unknown error', stack: err.stack });
       console.error(`Chunk ${i + 1} failed:`, err);
       chunkResults[i] = [];
     }
@@ -314,7 +337,7 @@ Context: ${context}`
   try {
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompts[action] }],
-      model: GROQ_MODEL,
+      model: PRIMARY_MODEL,
       max_tokens: 600,
       temperature: 0.7,
     });
@@ -336,7 +359,7 @@ export async function regenerateCard(
         role: 'user',
         content: `Improve this flashcard to be more effective for learning.\n\nOriginal Front: ${front}\nOriginal Back: ${back}\nSource Context: ${context}\n\nReturn ONLY JSON: {"front":"...","back":"..."}`,
       }],
-      model: GROQ_MODEL,
+      model: PRIMARY_MODEL,
       response_format: { type: 'json_object' },
       max_tokens: 512,
     });

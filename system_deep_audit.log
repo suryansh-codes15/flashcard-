@@ -1,0 +1,32 @@
+[2026-04-19T09:13:21.024Z] [STREAM_START] {
+  "chunk_count": 3,
+  "fileName": "How To AI (1).pdf",
+  "templateId": "concept"
+}
+---
+[2026-04-19T09:13:22.931Z] [STREAM_COMPLETE] {
+  "flashcard_count": 0
+}
+---
+[2026-04-19T09:16:16.596Z] [STREAM_START] {
+  "chunk_count": 2,
+  "fileName": "AI Builder — Build Challenge (2).pdf",
+  "templateId": "concept"
+}
+---
+[2026-04-19T09:16:19.011Z] [CHUNK_PROCESS_FAILED] {
+  "chunk": 2,
+  "error": "429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kp85tfb6fcb91p6bssab1hg5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 96551, Requested 5342. Please try again in 27m15.552s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}",
+  "stack": "Error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kp85tfb6fcb91p6bssab1hg5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 96551, Requested 5342. Please try again in 27m15.552s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n    at APIError.generate (webpack-internal:///(rsc)/./node_modules/groq-sdk/core/error.mjs:71:20)\n    at Groq.makeStatusError (webpack-internal:///(rsc)/./node_modules/groq-sdk/client.mjs:152:71)\n    at Groq.makeRequest (webpack-internal:///(rsc)/./node_modules/groq-sdk/client.mjs:294:30)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async generateCardsForChunk (webpack-internal:///(rsc)/./src/lib/ai-generator.ts:101:24)\n    at async processChunk (webpack-internal:///(rsc)/./src/lib/ai-generator.ts:191:30)\n    at async Promise.all (index 1)\n    at async generateFlashcards (webpack-internal:///(rsc)/./src/lib/ai-generator.ts:207:9)\n    at async Object.start (webpack-internal:///(rsc)/./src/app/api/generate-flashcards/route.ts:282:36)"
+}
+---
+[2026-04-19T09:16:19.061Z] [CHUNK_PROCESS_FAILED] {
+  "chunk": 1,
+  "error": "429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kp85tfb6fcb91p6bssab1hg5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 96549, Requested 7815. Please try again in 1h2m50.495999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}",
+  "stack": "Error: 429 {\"error\":{\"message\":\"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kp85tfb6fcb91p6bssab1hg5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 96549, Requested 7815. Please try again in 1h2m50.495999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing\",\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}\n    at APIError.generate (webpack-internal:///(rsc)/./node_modules/groq-sdk/core/error.mjs:71:20)\n    at Groq.makeStatusError (webpack-internal:///(rsc)/./node_modules/groq-sdk/client.mjs:152:71)\n    at Groq.makeRequest (webpack-internal:///(rsc)/./node_modules/groq-sdk/client.mjs:294:30)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async generateCardsForChunk (webpack-internal:///(rsc)/./src/lib/ai-generator.ts:101:24)\n    at async processChunk (webpack-internal:///(rsc)/./src/lib/ai-generator.ts:191:30)\n    at async Promise.all (index 0)\n    at async generateFlashcards (webpack-internal:///(rsc)/./src/lib/ai-generator.ts:207:9)\n    at async Object.start (webpack-internal:///(rsc)/./src/app/api/generate-flashcards/route.ts:282:36)"
+}
+---
+[2026-04-19T09:16:19.073Z] [STREAM_COMPLETE] {
+  "flashcard_count": 0
+}
+---
