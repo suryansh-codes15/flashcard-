@@ -49,8 +49,10 @@ export default function UploadPage() {
 
   const handleLibrarySelect = async (url: string, name: string) => {
     try {
+      setFile(null); // Clear previous size to avoid 0MB flicker
+      setCardCount(0);
       setStage('uploading');
-      setStatusMsg('Downloading library sample...');
+      setStatusMsg(`Downloading ${name}...`);
       
       // Determine if it's a local asset or external URL
       const isLocal = url.startsWith('/');
@@ -356,8 +358,10 @@ export default function UploadPage() {
               ) : stage === 'uploading' ? (
                 <div className="flex flex-col items-center gap-6 w-full px-10 text-center animate-fade-up">
                   <div className="w-full space-y-1">
-                    <p className="text-sm font-black text-white truncate max-w-[200px] mx-auto">{file?.name}</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase">{file ? (file.size / 1024 / 1024).toFixed(2) : 0} MB</p>
+                    <p className="text-sm font-black text-white truncate max-w-[200px] mx-auto">{file?.name || 'Preparing...'}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">
+                      {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : 'Estimating...'}
+                    </p>
                   </div>
                   <div className="w-full h-2 rounded-full bg-[#1a1040] overflow-hidden">
                     <div className="h-full bg-purple-500 transition-all duration-300" style={{ width: `${progress}%` }} />
