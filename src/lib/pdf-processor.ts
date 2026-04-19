@@ -1,4 +1,4 @@
-import * as pdfjs from 'pdfjs-dist';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { PDFChunk } from '@/types';
 
 // Use standard legacy worker for Node.js compatibility
@@ -30,10 +30,12 @@ function cleanText(text: string): string {
 async function extractTextFromBuffer(buffer: Uint8Array): Promise<ParsedPDF> {
   // Load the PDF document
   const loadingTask = pdfjs.getDocument({
-    data: buffer,
+    data: new Uint8Array(buffer),
     useWorkerFetch: false,
     isEvalSupported: false,
-    useSystemFonts: true
+    useSystemFonts: true,
+    disableWorker: true,
+    verbosity: 0
   });
 
   const pdf = await loadingTask.promise;
