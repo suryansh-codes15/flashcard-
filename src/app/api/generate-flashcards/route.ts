@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import crypto from 'crypto';
 import { generateFlashcards } from '@/lib/ai-generator';
 import { z } from 'zod';
 import type { Flashcard, CardTemplateKey, ColorPalette } from '@/types';
@@ -37,7 +38,7 @@ function makeCard(
 ): Flashcard {
   const now = new Date().toISOString();
   return {
-    id: `fb-${deckId}-${idx}-${Date.now()}`,
+    id: crypto.randomUUID(),
     deckId,
     front: fields.front,
     back: fields.back,

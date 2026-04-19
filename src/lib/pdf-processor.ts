@@ -1,4 +1,5 @@
 import * as pdfjs from 'pdfjs-dist';
+import type { PDFChunk } from '@/types';
 
 // Use standard legacy worker for Node.js compatibility
 // In Next.js/Node, we don't necessarily need a separate worker file if we use the standard setup
@@ -69,7 +70,7 @@ function detectHeading(line: string): boolean {
   return false;
 }
 
-function splitIntoSemanticChunks(text: string, maxTokens = 1500): PDFChunk[] {
+function splitIntoSemanticChunks(text: string, maxTokens = 2000): PDFChunk[] {
   const chunks: PDFChunk[] = [];
   const lines = text.split('\n');
 
@@ -116,7 +117,7 @@ function splitIntoSemanticChunks(text: string, maxTokens = 1500): PDFChunk[] {
     flushChunk();
   }
 
-  const maxChunks = parseInt(process.env.MAX_PDF_CHUNKS || '30', 10);
+  const maxChunks = parseInt(process.env.MAX_PDF_CHUNKS || '15', 10);
   return chunks.slice(0, maxChunks);
 }
 

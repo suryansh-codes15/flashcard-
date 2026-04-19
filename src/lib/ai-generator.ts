@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import crypto from 'crypto';
 import type { PDFChunk, Flashcard, CardType, ClassLevel, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
@@ -159,8 +160,8 @@ export async function generateFlashcards(
   const TOTAL_TARGET = 20;
   const targetPerChunk = Math.max(2, Math.floor(TOTAL_TARGET / chunks.length));
 
-  // Process chunks in parallel with a smart concurrency limit
-  const CONCURRENCY_LIMIT = 3;
+  // Process chunks in parallel with a higher concurrency limit
+  const CONCURRENCY_LIMIT = 10;
   const chunkResults: RawCard[][] = new Array(chunks.length);
   
   // Create an array of indices to process
@@ -188,7 +189,8 @@ export async function generateFlashcards(
     }
   };
 
-  // Run in groups to respect concurrency limit
+  // Run all chunks in parallel groups but with a much higher limit
+  // This drastically speeds up the "Forging" stage.
   for (let i = 0; i < chunks.length; i += CONCURRENCY_LIMIT) {
     const group = indices.slice(i, i + CONCURRENCY_LIMIT);
     await Promise.all(group.map(idx => processChunk(idx)));
@@ -219,7 +221,7 @@ export async function generateFlashcards(
     }
 
     return {
-      id: `card-${deckId}-${idx}-${Date.now() + idx}`,
+      id: crypto.randomUUID(), // Use valid UUID for Supabase compatibility
       deckId,
       front: rc.front,
       back: rc.back,

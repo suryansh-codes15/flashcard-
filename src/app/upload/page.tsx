@@ -182,6 +182,7 @@ export default function UploadPage() {
                     insight: c.insight,
                     example: c.example,
                     mistake: c.mistake,
+                    concept: c.concept || '',
                     options: c.options,
                     correct_answer: c.correctAnswer,
                     interval: c.interval,
@@ -191,7 +192,10 @@ export default function UploadPage() {
                     lapse_count: c.lapseCount
                   })));
 
-                if (cardsError) throw cardsError;
+                if (cardsError) {
+                  console.error('Supabase Cards Insert Error:', cardsError);
+                  throw cardsError;
+                }
                 console.log('Forge results synced to cloud successfully.');
               } catch (syncErr) {
                 console.error('Cloud sync failed during forge:', syncErr);
