@@ -8,6 +8,29 @@ import FlashCard3D from '@/components/practice/FlashCard3D';
 import { ArrowLeft, Flame, Trophy, ChevronLeft, AlertCircle, Zap, RotateCcw, CheckCircle2 } from 'lucide-react';
 import type { Flashcard, DifficultyLevel, MascotState } from '@/types';
 
+function spawnConfetti(container: HTMLElement) {
+  const colors = ['#a78bfa', '#6ee7b7', '#fbbf24', '#fb7185', '#93c5fd', '#f9a8d4'];
+  for (let i = 0; i < 20; i++) {
+    const d = document.createElement('div');
+    const cx = (Math.random() * 160 - 80) + 'px';
+    const cy = -(60 + Math.random() * 80) + 'px';
+    const cr = (Math.random() * 720 - 360) + 'deg';
+    d.style.cssText = `
+      position:absolute;width:${6 + Math.random() * 8}px;
+      height:${6 + Math.random() * 8}px;
+      border-radius:${Math.random() > .5 ? '50%' : '3px'};
+      background:${colors[i % colors.length]};
+      top:50%;left:50%;
+      --cx:${cx};--cy:${cy};--cr:${cr};
+      animation:confettiPop .9s ease forwards;
+      animation-delay:${Math.random() * .2}s;
+      pointer-events:none;z-index:50;
+    `;
+    container.appendChild(d);
+    setTimeout(() => d.remove(), 1200);
+  }
+}
+
 // Pure CSS Confetti Component (Dual Sided)
 function ConfettiBurst() {
   const particles = Array.from({ length: 40 });
@@ -81,6 +104,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   const [floatingXP, setFloatingXP] = useState<number | null>(null);
   const [holoBoost, setHoloBoost] = useState(false);
   const [cardError, setCardError] = useState(false);
+  const sceneRef = useRef<HTMLDivElement>(null);
 
   const [hydrated, setHydrated] = useState(false);
   const sessionStartedTime = useRef(new Date().toISOString());
@@ -164,6 +188,11 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         setNovaState('dancing');
         advanceCard();
       }, 700);
+
+      // 🎆 Trigger interactive confetti for Good/Easy
+      if ((rating === 'medium' || rating === 'easy') && sceneRef.current) {
+        spawnConfetti(sceneRef.current);
+      }
     }
   }, [cards, currentIndex, isFinished, rateCard, advanceCard]);
 
@@ -492,7 +521,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       </div>
 
       {/* 🃏 MAIN STUDY SCENE */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center relative">
+      <div ref={sceneRef} className="flex-1 w-full flex flex-col items-center justify-center relative">
         
         {/* GAMIFICATION LAYERS */}
         {showConfetti && <ConfettiBurst />}
@@ -506,13 +535,15 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
           
           {/* Sparky / GUARDIAN (Left) */}
           <div className="hidden md:flex flex-col items-center gap-4 z-50">
-             <MascotCharacter 
-                side="left"
-                subject="science" 
-                name="Sparky" 
-                state={sparkyState} 
-                className="w-44 h-44 drop-shadow-[0_15px_35px_rgba(139,92,246,0.3)]" 
-             />
+             <div style={{ animation: 'charRead 3.2s ease-in-out infinite' }}>
+               <MascotCharacter 
+                  side="left"
+                  subject="science" 
+                  name="Sparky" 
+                  state={sparkyState} 
+                  className="w-44 h-44 drop-shadow-[0_15px_35px_rgba(139,92,246,0.3)]" 
+               />
+             </div>
              <div className="px-5 py-2 glass-surface rounded-full text-[10px] font-black text-purple-400 uppercase tracking-[3px] border border-purple-500/20">
                 Guardian
              </div>
@@ -540,13 +571,15 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
 
           {/* Nova / HYPE-BOT (Right) */}
           <div className="hidden md:flex flex-col items-center gap-4 z-50">
-             <MascotCharacter 
-                side="right"
-                subject="math" 
-                name="Nova" 
-                state={novaState} 
-                className="w-44 h-44 drop-shadow-[0_15px_35px_rgba(16,185,129,0.3)] animate-[eyeBlink_4s_2.2s_infinite]" 
-             />
+             <div style={{ animation: 'charDance 2.2s ease-in-out infinite', animationDelay: '0.4s' }}>
+               <MascotCharacter 
+                  side="right"
+                  subject="math" 
+                  name="Nova" 
+                  state={novaState} 
+                  className="w-44 h-44 drop-shadow-[0_15px_35px_rgba(16,185,129,0.3)] animate-[eyeBlink_4s_2.2s_infinite]" 
+               />
+             </div>
              <div className="px-5 py-2 glass-surface rounded-full text-[10px] font-black text-emerald-400 uppercase tracking-[3px] border border-emerald-500/20">
                 Hype-Bot
              </div>
