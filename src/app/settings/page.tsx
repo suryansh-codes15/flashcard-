@@ -54,7 +54,6 @@ export default function SettingsPage() {
   };
 
   const sections = [
-
     {
       title: 'Study Experience',
       icon: Settings,
