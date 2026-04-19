@@ -1,4 +1,6 @@
 const PDFParser = require("pdf2json");
+const fs = require("fs");
+const path = require("path");
 
 interface ParsedPDF {
   text: string;
@@ -140,6 +142,15 @@ export async function processPDF(buffer: Buffer): Promise<{
   title?: string;
 }> {
   const { text, pageCount, title } = await extractTextFromBuffer(buffer);
+  
+  // EMERGENCY TRACE: Save to disk for AI assistant to inspect
+  try {
+    fs.writeFileSync(path.join(process.cwd(), 'debug_pdf_text.txt'), text);
+    console.log(`[DEBUG] Saved ${text.length} chars to debug_pdf_text.txt`);
+  } catch (err) {
+    console.error('[DEBUG] Failed to save debug text:', err);
+  }
+
   const cleanedText = cleanText(text);
   const chunks = splitIntoSemanticChunks(cleanedText);
 
