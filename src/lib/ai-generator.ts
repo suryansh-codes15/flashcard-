@@ -1,5 +1,7 @@
 import Groq from 'groq-sdk';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import type { PDFChunk, Flashcard, CardType, ClassLevel, CardTemplateKey, ColorPalette, TutorAction } from '@/types';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
@@ -128,6 +130,15 @@ async function generateCardsForChunk(
   });
 
   const text = completion.choices[0]?.message?.content || '{}';
+
+  // EMERGENCY AI TRACE
+  try {
+    fs.writeFileSync(path.join(process.cwd(), 'debug_ai_response.txt'), text);
+    console.log(`[DEBUG] Saved AI response to debug_ai_response.txt`);
+  } catch (err) {
+    console.error('[DEBUG] Failed to save AI response:', err);
+  }
+
   const parsed = JSON.parse(text);
   const cards = parsed.cards || (Array.isArray(parsed) ? parsed : []);
   
