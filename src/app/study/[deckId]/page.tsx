@@ -321,7 +321,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   const stats = getStats();
 
   return (
-    <div className="min-h-screen flex flex-col items-center overflow-hidden">
+    <div className="h-screen flex flex-col items-center overflow-hidden">
       {/* 📊 TOP PROGRESS BAR */}
       <div className="fixed top-0 left-0 w-full h-[8px] bg-white/5 z-[200]">
         <div 
@@ -331,7 +331,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       </div>
 
       {/* 📂 SESSION HEADER */}
-      <div className="w-full max-w-7xl px-8 py-10 flex items-center justify-between z-10 shrink-0">
+      <div className="w-full max-w-7xl px-8 py-6 flex items-center justify-between z-10 shrink-0">
         <div className="flex items-center gap-6">
           <button
             onClick={() => router.push('/dashboard')}
@@ -378,7 +378,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
       </div>
 
       {/* 🃏 MAIN STUDY SCENE */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center relative -mt-12">
+      <div className="flex-1 w-full flex flex-col items-center justify-center relative">
         
         {/* GAMIFICATION LAYERS */}
         {showConfetti && <ConfettiBurst />}
@@ -440,7 +440,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         </div>
 
         {/* 🎮 BOTTOM CONTROLS AREA */}
-        <div className="w-full max-w-4xl flex flex-col items-center gap-8 pb-12 z-40 mt-16 sm:mt-24">
+        <div className="w-full max-w-4xl flex flex-col items-center gap-6 pb-8 z-40 mt-8 sm:mt-12">
             
             {/* Navigation Row */}
             <div className="flex items-center gap-4 bg-black/20 backdrop-blur-md px-6 py-2 rounded-full border border-white/5 shadow-2xl">
