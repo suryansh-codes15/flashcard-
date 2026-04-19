@@ -11,6 +11,7 @@ import { generateId, getDeckEmoji } from '@/lib/utils';
 import type { GenerationProgress, Flashcard, ClassLevel } from '@/types';
 import MascotCharacter from '@/components/MascotCharacter';
 import SampleLibrary from '@/components/forge/SampleLibrary';
+import { supabase } from '@/lib/supabase';
 
 const MODES = [
   { id: 'concept', label: 'Deep Learning', emoji: '🧠', desc: 'Core concept & definitions', mascot: 'science', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' },
