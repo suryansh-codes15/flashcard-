@@ -41,39 +41,21 @@ function CinematicBackgroundComponent() {
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#050510]">
       
-      {/* 🌌 AURORA ORB 1: PURPLE (Bottom-Left) */}
+      {/* 🔮 CIRCLE GLOW: LEFT (PURPLE) */}
       <div 
-        className="absolute w-[900px] h-[900px] rounded-full left-[-15%] bottom-[-30%] animate-orb1 opacity-100"
+        className="absolute w-[800px] h-[800px] rounded-full left-[-10%] top-[10%] animate-orb1 opacity-[0.45]"
         style={{
-          background: 'radial-gradient(circle at 40% 60%, rgba(124,58,237,0.35) 0%, rgba(139,92,246,0.20) 35%, rgba(124,58,237,0.08) 60%, transparent 75%)',
-          filter: 'blur(40px)',
+          background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, rgba(109,40,217,0.1) 45%, transparent 70%)',
+          filter: 'blur(60px)',
         }}
       />
 
-      {/* 🌌 AURORA ORB 2: PURPLE (Left-Center) */}
+      {/* 🔮 CIRCLE GLOW: RIGHT (GREEN/TEAL) */}
       <div 
-        className="absolute w-[600px] h-[600px] rounded-full left-[-10%] top-[20%] animate-orb2 opacity-100"
+        className="absolute w-[800px] h-[800px] rounded-full right-[-10%] bottom-[10%] animate-orb2 opacity-[0.4]"
         style={{
-          background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(124,58,237,0.07) 50%, transparent 70%)',
-          filter: 'blur(30px)',
-        }}
-      />
-
-      {/* 🌌 AURORA ORB 3: VIOLET (Top-Left) */}
-      <div 
-        className="absolute w-[700px] h-[700px] rounded-full left-[-150px] top-[-200px] animate-orb3 opacity-100"
-        style={{
-          background: 'radial-gradient(circle at 35% 35%, rgba(109,40,217,0.3) 0%, rgba(88,28,220,0.15) 40%, transparent 68%)',
-          filter: 'blur(50px)',
-        }}
-      />
-
-      {/* 🌌 AURORA ORB 4: GREEN (Right Edge) */}
-      <div 
-        className="absolute w-[800px] h-[800px] rounded-full right-[-15%] top-[10%] opacity-100"
-        style={{
-          background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, rgba(6,182,212,0.1) 50%, transparent 70%)',
-          filter: 'blur(50px)',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.25) 0%, rgba(6,182,212,0.1) 45%, transparent 70%)',
+          filter: 'blur(60px)',
         }}
       />
 
