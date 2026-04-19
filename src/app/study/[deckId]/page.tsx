@@ -380,34 +380,47 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 text-center space-y-10 animate-fade-in dashboard-scroll overflow-y-auto">
         
-        {/* TOP SECTION: MASCOT & XP */}
-        <div className="relative group perspective-1000 pointer-events-none">
-           <div className="absolute inset-0 bg-purple-500/20 blur-[100px] rounded-full scale-150 animate-pulse" />
-           <MascotCharacter 
-              subject="science" 
-              side="left" 
-              name="Sparky" 
-              state="jumping" 
-              className="w-48 h-48 drop-shadow-[0_0_40px_rgba(124,58,237,0.5)] z-20 relative transition-transform group-hover:scale-105" 
-            />
+        {/* TOP SECTION: MASCOT & XP CELEBRATION */}
+        <div className="relative group perspective-2000 pointer-events-none flex flex-col items-center">
+           {/* Center Glow */}
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/20 blur-[120px] rounded-full scale-150 animate-pulse -z-10" />
            
-           {/* SPEECH BUBBLE */}
-           <div className="absolute -right-24 top-0 w-64 bg-white p-4 rounded-[24px] rounded-bl-none shadow-2xl animate-fade-up z-30 border border-purple-100">
-              <p className="text-[11px] font-black leading-tight text-gray-800 text-left">
-                <span className="text-purple-600 block mb-1 uppercase tracking-widest text-[9px]">AI Analysis</span>
-                {isAnalyzing ? (
-                  <span className="flex items-center gap-1.5 opacity-50 italic">
-                    <Zap className="w-2.5 h-2.5 animate-pulse text-purple-500" /> 
-                    Synthesizing performance data...
-                  </span>
-                ) : (
-                  <>"{aiFeedback || insight}"</>
-                )}
-              </p>
-           </div>
+           <div className="relative flex items-center justify-center">
+             <MascotCharacter 
+                subject="science" 
+                side="left" 
+                name="Sparky" 
+                state="jumping" 
+                className="w-56 md:w-64 h-auto drop-shadow-[0_0_50px_rgba(124,58,237,0.4)] z-20 relative transition-transform group-hover:scale-110 duration-700" 
+              />
+             
+             {/* THE IMPROVED GLASSMORPHIC SPEECH BUBBLE */}
+             <div className="absolute -right-16 md:-right-48 -top-12 w-72 md:w-80 bg-white/10 backdrop-blur-2xl border border-white/20 p-6 rounded-[32px] rounded-bl-none shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-fade-up z-40">
+                {/* Speech Bubble Tail */}
+                <div className="absolute -bottom-4 left-0 w-8 h-8 bg-white/10 backdrop-blur-2xl border-l border-b border-white/20 rotate-45 -translate-x-1/2" />
+                
+                <p className="text-sm md:text-base font-bold leading-relaxed text-white text-left tracking-tight">
+                  <span className="text-purple-400 block mb-2 uppercase tracking-[0.4em] text-[10px] font-black italic">AI Master Analysis</span>
+                  {isAnalyzing ? (
+                    <span className="flex items-center gap-2 opacity-50 italic">
+                      <Zap className="w-4 h-4 animate-pulse text-yellow-400 fill-yellow-400" /> 
+                      Decoding performance neural-net...
+                    </span>
+                  ) : (
+                    <span className="leading-snug block">
+                      "{aiFeedback || insight}"
+                    </span>
+                  )}
+                </p>
+             </div>
 
-           <div className="absolute -top-6 -left-10 animate-confetti-burst z-30">
-              <Trophy className="w-16 h-16 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
+             {/* VICTORIOUS TROPHY */}
+             <div className="absolute -left-12 md:-left-32 -top-6 animate-bounce z-40 transition-transform duration-700 hover:rotate-12">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-yellow-400/20 blur-2xl rounded-full animate-pulse" />
+                  <Trophy className="w-20 h-20 md:w-24 md:h-24 text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.6)]" />
+                </div>
+             </div>
            </div>
         </div>
 
