@@ -42,10 +42,10 @@ export async function POST(request: NextRequest) {
       fileSize = file.size;
     }
 
-    // ENFORCE 10MB LIMIT
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // ENFORCE 4MB LIMIT
+    const maxSize = 4 * 1024 * 1024; // 4MB
     if (fileSize > maxSize) {
-      return NextResponse.json({ error: 'File too large. Maximum size is 10MB' }, { status: 400 });
+      return NextResponse.json({ error: 'File too large. Maximum size is 4MB' }, { status: 400 });
     }
 
     const { chunks, pageCount, title } = await processPDF(buffer);

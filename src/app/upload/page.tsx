@@ -59,10 +59,10 @@ export default function UploadPage() {
 
     try {
       const MAX_DIRECT_SIZE = 4 * 1024 * 1024; // 4MB (Vercel Limit safe)
-      const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB (User requested limit)
+      const MAX_TOTAL_SIZE = 4 * 1024 * 1024; // 4MB (Temporary limit until RLS is fixed)
 
       if (file.size > MAX_TOTAL_SIZE) {
-        throw new Error('File too large. Maximum size is 10MB.');
+        throw new Error('File too large. Maximum size is 4MB.');
       }
 
       let uploadData;
@@ -349,7 +349,7 @@ export default function UploadPage() {
                       {file ? file.name : 'Engine ready · Drop your PDF to begin'}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
-                      {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · Ready for Forge` : 'Drop PDF (Max 10 MB) or Click to browse'}
+                      {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · Ready for Forge` : 'Drop PDF (Max 4 MB) or Click to browse'}
                     </p>
                   </div>
                   {file && (
